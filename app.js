@@ -178,7 +178,7 @@ setTimeout(drawComparative, 60);
 })();
 
 // ---------- WebSocket realtime ----------
-const rtState={scores:{}, currentPoll:null, answers:{}, timer:null, timeLeft:0, reactions:{}, qa:{}};
+const rtState={scores:{}, currentPoll:null, answers:{}, timer:null, timeLeft:0, reactions:{}, qa:{}, pollFinished:false};
 
 function renderParticipants(){
   const list=$('#participantList');
@@ -260,7 +260,22 @@ function connectWS(){ const url=$('#wsUrl')?.value?.trim(); if(!url) return toas
   SavedPolls.renderSavedPolls($('#savedList'), startSaved);
 })();
 
-function startTimer(poll){ clearInterval(rtState.timer); rtState.timeLeft=poll.timed||0; updateTimerBar(); if(!poll.timed) return; rtState.timer=setInterval(()=>{ rtState.timeLeft--; updateTimerBar(); send({t:'tick', room:ROOM, left:rtState.timeLeft}); if(rtState.timeLeft<=0){ clearInterval(rtState.timer); finalizePoll(); } },1000); }
+function startTimer(poll){
+  clearInterval(rtState.timer);
+  rtState.timeLeft = poll.timed || 0;
+  rtState.pollFinished = false;
+  updateTimerBar();
+  if(!poll.timed) return;
+  rtState.timer = setInterval(()=>{
+    rtState.timeLeft--;
+    updateTimerBar();
+    send({t:'tick', room:ROOM, left:rtState.timeLeft});
+    if(rtState.timeLeft<=0){
+      clearInterval(rtState.timer);
+      finalizePoll();
+    }
+  },1000);
+}
 function updateTimerBar(){ const total=(rtState.currentPoll&&rtState.currentPoll.timed)||0; const pct=total? Math.max(0,(rtState.timeLeft/total)*100):0; const el=$('#timerBar'); if(el) el.style.width=pct+'%'; }
 
 function renderResults(){ const area=$('#resultsArea'); const poll=rtState.currentPoll; if(!area) return; if(!poll){ area.textContent='No active poll'; return }
@@ -285,7 +300,7 @@ function renderResults(){ const area=$('#resultsArea'); const poll=rtState.curre
     const freq={}; Object.values(answers).forEach(v=>{ const num=Number(v); if(!isNaN(num)) freq[num]=(freq[num]||0)+1; });
     const entries=Object.entries(freq).sort((a,b)=>Number(a[0])-Number(b[0]));
     entries.forEach(([num,n])=>{ html+=bar(String(num),n); });
-    if(poll.correct!=null) html+=`<div class="mt8 mini">Correct: ${poll.correct}</div>`;
+    if(poll.correct!=null && rtState.pollFinished) html+=`<div class="mt8 mini">Correct: ${poll.correct}</div>`;
   }
   else { html += '<div class="mini muted">Type not supported yet on host results.</div>'; }
   html+='</div>'; area.innerHTML=html;
@@ -294,7 +309,33 @@ function renderResults(){ const area=$('#resultsArea'); const poll=rtState.curre
 
 function renderLeader(){ const t=$('#leaderTable'); if(!t) return; const rows=Object.entries(rtState.scores).sort((a,b)=>b[1].points-a[1].points); let html='<tr><td>#</td><td>Name</td><td>Points</td></tr>'; rows.forEach(([id,info],i)=>{ const av=(info&&info.avatar)||'🙂'; html+=`<tr><td>${i+1}</td><td>${av} ${(info&&info.name)||id}</td><td>${(info&&info.points)|0}</td></tr>`; }); t.innerHTML=html }
 
-function finalizePoll(){ const poll=rtState.currentPoll; if(!poll) return; if(!poll.score){ toast('Poll finished.'); return; } let correctKey=null; if(poll.correct!=null) correctKey=poll.correct; const base=100; for(const [id,ans] of Object.entries(rtState.answers)){ if(!rtState.scores[id]) rtState.scores[id]={name:'Guest',points:0,avatar:'🙂'}; let ok=true; if(correctKey!=null){ if(poll.type==='rank'){ ok = Number(ans)===Number(correctKey); } else { ok = String(ans).toLowerCase()===String(correctKey).toLowerCase(); } } if(ok) rtState.scores[id].points += base; } renderLeader(); send({t:'scores',room:ROOM,scores:rtState.scores}); toast('Poll finished. Scores updated.'); }
+function finalizePoll(){
+  const poll = rtState.currentPoll;
+  if(!poll) return;
+  rtState.pollFinished = true;
+  if(!poll.score){
+    toast('Poll finished.');
+    return;
+  }
+  let correctKey=null;
+  if(poll.correct!=null) correctKey=poll.correct;
+  const base=100;
+  for(const [id,ans] of Object.entries(rtState.answers)){
+    if(!rtState.scores[id]) rtState.scores[id]={name:'Guest',points:0,avatar:'🙂'};
+    let ok=true;
+    if(correctKey!=null){
+      if(poll.type==='rank'){
+        ok = Number(ans)===Number(correctKey);
+      } else {
+        ok = String(ans).toLowerCase()===String(correctKey).toLowerCase();
+      }
+    }
+    if(ok) rtState.scores[id].points += base;
+  }
+  renderLeader();
+  send({t:'scores',room:ROOM,scores:rtState.scores});
+  toast('Poll finished. Scores updated.');
+}
 $('#resetScores')?.addEventListener('click',()=>{ rtState.scores={}; renderLeader(); renderParticipants(); send({t:'reset',room:ROOM}) });
 
 // ---------- Reactions (host agg) ----------
