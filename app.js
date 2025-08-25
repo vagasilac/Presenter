@@ -329,8 +329,22 @@ $('#qaSend')?.addEventListener('click',()=>{ const txt = $('#qaInput').value.tri
   function applySnap(snap){ resetTransform(); ctx.clearRect(0,0,CSSW,CSSH); if(snap) ctx.drawImage(snap,0,0,CSSW,CSSH); currentSnap=snap||null; scheduleSave(); }
   function fit(){ const rect=page.getBoundingClientRect(); DPR=window.devicePixelRatio||1; CSSW=Math.max(10, Math.round(rect.width)); CSSH=Math.max(10, Math.round(rect.height)); canvas.width=Math.round(CSSW*DPR); canvas.height=Math.round(CSSH*DPR); canvas.style.width=CSSW+'px'; canvas.style.height=CSSH+'px'; resetTransform(); if(currentSnap){ applySnap(currentSnap); } else { const data=localStorage.getItem(LS_KEY); if(data){ const img=new Image(); img.onload=()=>{ resetTransform(); ctx.clearRect(0,0,CSSW,CSSH); ctx.drawImage(img,0,0,CSSW,CSSH); currentSnap=snapshotCanvas(); }; img.src=data; } const cfg=localStorage.getItem(LS_CFG); if(cfg){ try{ const c=JSON.parse(cfg); color=c.color||color; width=c.width||width; if(colorInp) colorInp.value=color; if(widthInp) widthInp.value=String(width); syncPreview(); }catch(_){} } } }
   window.addEventListener('resize',()=>{ if(!currentSnap) currentSnap=snapshotCanvas(); fit(); }); setTimeout(fit,40);
-  function undo(){ if(!history.length) return; const current=snapshotCanvas(); const snap=history.pop(); redoStack.push(current); applySnap(snap); }
-  function redoAction(){ if(!redoStack.length) return; const current=snapshotCanvas(); const snap=redoStack.pop(); history.push(current); applySnap(snap); }
+  function undo(){
+    if(!history.length) return;
+    const current = snapshotCanvas();
+    const snap = history.pop();
+    redoStack.push(current);
+    applySnap(snap);
+    syncButtons();
+  }
+  function redoAction(){
+    if(!redoStack.length) return;
+    const current = snapshotCanvas();
+    const snap = redoStack.pop();
+    history.push(current);
+    applySnap(snap);
+    syncButtons();
+  }
   function clearAll(){ pushHistory(); resetTransform(); ctx.clearRect(0,0,CSSW,CSSH); currentSnap=snapshotCanvas(); scheduleSave(); }
   function setDrawEnabled(on){
   drawEnabled = on;
