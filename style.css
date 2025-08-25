@@ -12,6 +12,7 @@ body{
   background:radial-gradient(1200px 1200px at 120% -10%, #102338 0%, #0b0f14 45%);
   font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,'Helvetica Neue',Arial
 }
+footer{padding:10px 0 18px}
 .wrap{display:grid;grid-template-rows:auto 1fr auto;min-height:100%}
 
 /* Header */
@@ -37,10 +38,26 @@ main{padding:18px;display:grid;gap:18px}
 .mono{font-family:ui-monospace,Menlo,Consolas,monospace}
 .mt8{margin-top:8px}
 .mt12{margin-top:12px}
+.mt10{margin-top:10px}
+.mt6{margin-top:6px}
+.mb2{margin-bottom:2px}
+.mb8{margin-bottom:8px}
 .gap6{gap:6px}
+.gap8{gap:8px}
+.gap10{gap:10px}
 .gap12{gap:12px}
 .right{margin-left:auto}
 .hint{font-size:12px;color:#a7b6c6}
+.justify-between{justify-content:space-between}
+.items-end{align-items:flex-end}
+.m0{margin:0}
+.w320{width:320px}
+.w360{width:360px}
+.w80{width:80px}
+.w160{width:160px}
+.w100{width:100px}
+.w100p{width:100%}
+.flex1{flex:1}
 
 /* Inputs & buttons */
 .row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
@@ -74,6 +91,7 @@ button:hover{opacity:.95}
 /* Progress */
 .progress{height:8px;background:#142030;border:1px solid #223447;border-radius:999px;overflow:hidden}
 .progress>div{height:100%;background:linear-gradient(90deg,#1aa6ce,#2ad08c)}
+#timerBar{width:0%}
 
 /* Details */
 details{background:#0e1622;border:1px solid #213047;border-radius:12px;padding:8px 12px}

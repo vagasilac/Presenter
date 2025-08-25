@@ -25,15 +25,14 @@
         <div class="tab" data-tab="leader">Leaderboard</div>
       </div>
 
-```
-  <!-- SESSION TAB -->
+    <!-- SESSION TAB -->
   <div id="session" class="slide">
     <section class="card" id="connectCard">
       <h2>1) Start session</h2>
       <div class="session-grid">
         <div>
           <div class="row gap12">
-            <input id="wsUrl" placeholder="ws://&lt;detected-ip&gt;:8080" style="width:320px"/>
+            <input id="wsUrl" placeholder="ws://&lt;detected-ip&gt;:8080" class="w320"/>
             <button id="connectBtn" class="pill primary">Connect</button>
             <span id="connState" class="chip">disconnected</span>
           </div>
@@ -58,16 +57,16 @@
       <!-- PAGE 1: Craft vs Mass vs Lean -->
       <div class="page" data-page="cml">
         <div class="content">
-          <div class="row" style="justify-content:space-between;align-items:flex-end">
-            <h2 style="margin:0">Craft vs Mass vs Lean</h2>
+          <div class="row justify-between items-end">
+            <h2 class="m0">Craft vs Mass vs Lean</h2>
             <div class="row mini muted"><span class="chip">Topic</span><span class="chip">Interactive</span></div>
           </div>
 
-          <div class="grid cols-2" style="margin-top:10px">
+          <div class="grid cols-2 mt10">
             <div class="card" data-step="1">
               <h2>Craft (One-off / Artisan)</h2>
               <div class="muted mini">High variety • Low volume • Expert-led</div>
-              <svg id="craftViz" viewBox="0 0 320 120" style="width:100%;margin-top:8px">
+              <svg id="craftViz" viewBox="0 0 320 120" class="w100p mt8">
                 <defs><linearGradient id="g1" x1="0" x2="1"><stop offset="0%" stop-color="#ffb86b"/><stop offset="100%" stop-color="#ffd7a6"/></linearGradient></defs>
                 <rect x="8" y="10" width="304" height="100" rx="12" fill="#0e1622" stroke="#25334a"/>
                 <circle cx="60" cy="70" r="22" fill="url(#g1)"/>
@@ -75,7 +74,7 @@
                 <rect x="120" y="60" width="8" height="20" rx="2" fill="#ffd7a6"/>
                 <text x="18" y="28" fill="#c3d6e7" font-size="12">Skilled artisan builds end-to-end</text>
               </svg>
-              <ul class="mini" style="margin-top:6px">
+              <ul class="mini mt6">
                 <li>• Bespoke design, long lead time</li>
                 <li>• Flexible but inconsistent quality</li>
                 <li>• High cost per unit</li>
@@ -85,21 +84,21 @@
             <div class="card" data-step="2">
               <h2>Mass Production</h2>
               <div class="muted mini">Low variety • High volume • Dedicated lines</div>
-              <svg id="massViz" viewBox="0 0 320 120" style="width:100%;margin-top:8px">
+              <svg id="massViz" viewBox="0 0 320 120" class="w100p mt8">
                 <rect x="8" y="10" width="304" height="100" rx="12" fill="#0e1622" stroke="#25334a"/>
                 <rect x="30" y="70" width="260" height="12" rx="6" fill="#1a2b3d"/>
                 <g id="cars"></g>
                 <text x="18" y="28" fill="#c3d6e7" font-size="12">Dedicated line, push scheduling</text>
               </svg>
-              <button class="pill primary" id="animateBtn" style="margin-top:6px">Run animation</button>
+              <button class="pill primary mt6" id="animateBtn">Run animation</button>
             </div>
           </div>
 
-          <div class="grid cols-2" style="margin-top:10px">
+          <div class="grid cols-2 mt10">
             <div class="card" data-step="3">
               <h2>Lean Production</h2>
               <div class="muted mini">High mix • Flow • Pull • Quality at source</div>
-              <svg id="leanViz" viewBox="0 0 320 120" style="width:100%;margin-top:8px">
+              <svg id="leanViz" viewBox="0 0 320 120" class="w100p mt8">
                 <rect x="8" y="10" width="304" height="100" rx="12" fill="#0e1622" stroke="#25334a"/>
                 <path d="M26 82 Q 80 38, 150 82 T 294 82" stroke="#7cd992" stroke-width="3" fill="none"/>
                 <circle cx="60" cy="82" r="6" fill="#7cd992"/>
@@ -112,7 +111,7 @@
             <div class="card" data-step="4">
               <h2>KPIs (illustrative)</h2>
               <div class="row mini muted"><span class="chip">Lead Time</span><span class="chip">Cost/Unit</span><span class="chip">Flexibility</span></div>
-              <div style="display:grid;gap:10px;margin-top:8px">
+              <div class="grid gap10 mt8">
                 <canvas id="chartLead" height="90"></canvas>
                 <canvas id="chartCost" height="90"></canvas>
                 <canvas id="chartFlex" height="90"></canvas>
@@ -120,7 +119,7 @@
             </div>
           </div>
 
-          <div class="row mini" id="buildControls" style="gap:8px;margin:10px 0 2px 0">
+          <div class="row mini gap8 mt10 mb2" id="buildControls">
             <button id="buildPrev" class="pill ghost">◀ Step</button>
             <div class="chip" id="buildInfo">Step 0/0</div>
             <button id="buildNext" class="pill ghost">Step ▶</button>
@@ -145,14 +144,14 @@
               <button data-tool="ellipse">Ellipse</button>
             </div>
           </div>
-          <div class="row" style="margin-top:8px;align-items:center">
+          <div class="row mt8">
             <button id="colorSwatch" class="color-swatch" title="Pick color"></button>
             <input type="color" id="wbColor" value="#7cd992" class="color-hidden">
             <label>Width <input type="range" id="wbWidth" min="1" max="24" value="4"></label>
             <div id="sizeDot" class="size-dot" title="Stroke preview"></div>
           </div>
-          <div class="row swatchwrap mini" id="wbSwatches" style="margin-top:6px"></div>
-          <div class="row" style="margin-top:8px">
+          <div class="row swatchwrap mini mt6" id="wbSwatches"></div>
+          <div class="row mt8">
             <button id="wbUndo" class="pill ghost">Undo</button>
             <button id="wbRedo" class="pill ghost">Redo</button>
             <button id="wbClear" class="pill ghost">Clear</button>
@@ -178,7 +177,7 @@
             <option value="open">Open text</option>
             <option value="wordcloud">Word cloud</option>
           </select>
-          <input id="pollQ" placeholder="Your question" style="width:360px" />
+          <input id="pollQ" placeholder="Your question" class="w360" />
           <button id="sendPoll" class="primary pill">Send to trainees</button>
         </div>
         <div class="mt12" id="choicesWrap">
@@ -186,21 +185,21 @@
         </div>
         <div class="row gap12 mt12">
           <label class="mini muted"><input id="timed" type="checkbox"/> Timed (seconds)</label>
-          <input id="secs" type="number" value="20" style="width:80px"/>
+          <input id="secs" type="number" value="20" class="w80"/>
           <label class="mini muted"><input id="correctEnable" type="checkbox"/> Mark correct answer</label>
-          <input id="correctKey" placeholder="A/B/C... or True/False" style="width:160px"/>
+          <input id="correctKey" placeholder="A/B/C... or True/False" class="w160"/>
           <label class="mini muted"><input id="multiMC" type="checkbox"/> Allow multi-select (MC)</label>
         </div>
         <div class="row gap12 mt8">
           <label class="mini muted"><input id="allowChange" type="checkbox" checked/> Allow answer change before time ends</label>
-          <label class="mini muted"><input id="wcLimit" type="number" value="3" style="width:80px"/> Word cloud: max words</label>
-          <label class="mini muted"><input id="openChars" type="number" value="120" style="width:100px"/> Open text: max chars</label>
+          <label class="mini muted"><input id="wcLimit" type="number" value="3" class="w80"/> Word cloud: max words</label>
+          <label class="mini muted"><input id="openChars" type="number" value="120" class="w100"/> Open text: max chars</label>
         </div>
       </div>
 
       <div class="card">
         <h2>Live results</h2>
-        <div class="progress"><div id="timerBar" style="width:0%"></div></div>
+        <div class="progress"><div id="timerBar"></div></div>
         <div id="resultsArea" class="mt12 muted">Waiting for votes…</div>
       </div>
 
@@ -225,34 +224,32 @@
 <section id="clientCard" class="card hidden">
   <h2 id="clientHeader">Join</h2>
 
-  <div class="row mini" id="youAre" style="display:none;gap:8px;margin-bottom:8px"></div>
+  <div class="row mini gap8 mb8 hidden" id="youAre"></div>
 
   <div class="row gap12" id="joinForm">
-    <div class="row mini" style="gap:8px;align-items:center">
+    <div class="row mini gap8">
       <span class="muted">Pick an avatar:</span>
-      <div id="avatarPick" class="row" style="gap:6px;flex-wrap:wrap"></div>
+      <div id="avatarPick" class="row gap6"></div>
     </div>
     <button id="joinBtn" class="primary pill">Join</button>
   </div>
 
-  <div class="mt12" id="clientArea" style="display:none"></div>
-  <div id="reactRow" class="row mini" style="gap:8px;margin-top:10px;display:none">
+  <div class="mt12 hidden" id="clientArea"></div>
+  <div id="reactRow" class="row mini gap8 mt10 hidden">
     <span class="muted">Reactions:</span>
-    <div id="reactBar" class="row" style="gap:6px"></div>
+    <div id="reactBar" class="row gap6"></div>
     <div class="right"></div>
     <button id="qaBtn" class="pill ghost">Ask a question</button>
   </div>
-  <div id="qaForm" class="row hidden" style="gap:8px;margin-top:8px">
-    <input id="qaInput" placeholder="Type your question" style="flex:1"/>
+  <div id="qaForm" class="row hidden gap8 mt8">
+    <input id="qaInput" placeholder="Type your question" class="flex1"/>
     <button id="qaSend" class="pill primary">Send</button>
   </div>
 </section>
-```
+    </main>
 
-  </main>
-
-  <footer class="mini muted center" style="padding:10px 0 18px">
-    <div class="row" style="gap:12px;flex-wrap:wrap">
+    <footer class="mini muted center">
+    <div class="row gap12">
       <span>QR-only join • Works offline on LAN</span>
       <span class="chip">Pages + Whiteboard</span>
       <span class="chip">Single-port server</span>
