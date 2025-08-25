@@ -335,6 +335,7 @@ $('#qaSend')?.addEventListener('click',()=>{ const txt = $('#qaInput').value.tri
   drawEnabled = on;
   document.body.classList.toggle('ink-on', on);
   document.body.classList.toggle('wb-open', on);
+  if(panel) panel.style.display = on ? 'block' : 'none';
   if(fab) fab.classList.toggle('active', on);
   if(wbInd) wbInd.classList.toggle('on', on);
   page.classList.toggle('highlight-draw', on);
