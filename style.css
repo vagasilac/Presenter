@@ -150,13 +150,17 @@ pre{white-space:pre-wrap;word-wrap:break-word}
   min-width:48px; min-height:48px; max-width:40vh; max-height:40vh;
   background:#0e1622; border:1px solid #213047; border-radius:12px;
   box-shadow:0 10px 28px rgba(0,0,0,.45);
-  display:grid; place-items:center; overflow:hidden; resize:both;
+  display:grid; place-items:center; overflow:hidden;
   user-select:none; -webkit-user-select:none; -ms-user-select:none;
+  resize:none; /* disable native bottom-right handle */
 }
-/* Visual handle indicator moved to bottom-left */
-.mini-qr::after{
-  content:''; position:absolute; width:10px; height:10px;
-  left:2px; bottom:2px; /* indicator at bottom-left */
+/* Custom bottom-left handle */
+.mini-qr-handle{
+  position:absolute; left:0; bottom:0; width:16px; height:16px;
+  cursor:nesw-resize;
+}
+.mini-qr-handle::after{
+  content:''; position:absolute; left:2px; bottom:2px; width:10px; height:10px;
   border-left:2px solid #345; border-bottom:2px solid #345; border-radius:2px; opacity:.8;
 }
 /* Image fills box, never intercepts pointer */
