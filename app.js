@@ -403,7 +403,12 @@ $('#qaSend')?.addEventListener('click',()=>{ const txt = $('#qaInput').value.tri
   if(buildNext) buildNext.addEventListener('click',next);
   if(buildEdit) buildEdit.addEventListener('change',(e)=>{ editMode=e.target.checked; if(editMode){ content.addEventListener('click', onEditClick); } else { content.removeEventListener('click', onEditClick); } apply(); });
   if(buildClear) buildClear.addEventListener('click', clearSteps);
-  window.addEventListener('keydown',(e)=>{ if(e.key==='ArrowRight' || e.key===' '){ e.preventDefault(); next(); } if(e.key==='ArrowLeft'){ e.preventDefault(); prev(); }});
+  window.addEventListener('keydown',(e)=>{
+    const t=e.target;
+    if(t.tagName==='INPUT' || t.tagName==='TEXTAREA' || t.isContentEditable) return;
+    if(e.key==='ArrowRight' || e.key===' '){ e.preventDefault(); next(); }
+    if(e.key==='ArrowLeft'){ e.preventDefault(); prev(); }
+  });
 })();
 
 // ---------- Boot ----------
