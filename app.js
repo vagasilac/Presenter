@@ -81,9 +81,8 @@ function syncSessionHints(){
   function renderMiniQR(){
     const url = computeJoinUrl();
     const side = Math.max(96, Math.min(512, Math.round(Math.min(mini.clientWidth||110, mini.clientHeight||110))));
-    img.src = `/qr?text=${encodeURIComponent(url)}&size=${side}&t=${Date.now()}`;
-  }&size=${side}&err=Q&margin=16&fmt=svg&t=${Date.now()}`;
-    img.src = `/qr?${qs}`;
+    const qs = `text=${encodeURIComponent(url)}&size=${side}&ec=Q&border=4&t=${Date.now()}`;
+    img.src = `/qr.svg?${qs}`;
   }
 
   function persistSize(){
