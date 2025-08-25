@@ -2,9 +2,10 @@ const test = require('node:test');
 const assert = require('node:assert');
 const fs = require('node:fs');
 
-test('index.html includes Saved Polls tab', () => {
+test('index.html includes Saved polls section without separate tab', () => {
   const html = fs.readFileSync('index.html', 'utf8');
-  assert.match(html, /Saved Polls/);
+  assert.match(html, /Saved polls/i);
+  assert.ok(!/data-tab="saved"/.test(html));
 });
 
 test('saved polls save and load from localStorage', () => {

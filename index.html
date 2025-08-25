@@ -21,8 +21,7 @@
       <div class="tabs" role="tablist">
         <div class="tab" data-tab="session">Session</div>
         <div class="tab active" data-tab="presentation">Presentation</div>
-        <div class="tab" data-tab="polls">Live Polls</div>
-        <div class="tab" data-tab="saved">Saved Polls</div>
+        <div class="tab" data-tab="polls">Polls</div>
         <div class="tab" data-tab="leader">Leaderboard</div>
       </div>
 
@@ -42,6 +41,10 @@
           <details class="mt8"><summary>Diagnostics</summary><pre id="diag" class="mini muted"></pre></details>
         </div>
       </div>
+    </section>
+    <section class="card" id="participantsCard">
+      <h2>Participants (<span id="participantCount">0</span>)</h2>
+      <div id="participantList" class="mt8 mini muted">No participants yet.</div>
     </section>
   </div>
 
@@ -167,56 +170,55 @@
   <!-- POLLS (host) -->
   <div id="polls" class="slide">
     <div class="grid cols-2">
-      <div class="card">
-        <h2>Create a poll</h2>
-        <div class="row gap12">
-          <select id="pollType">
-            <option value="mc">Multiple choice</option>
-            <option value="tf">True / False</option>
-            <option value="scale">1–5 Rating</option>
-            <option value="rank">Ranking</option>
-            <option value="open">Open text</option>
-            <option value="wordcloud">Word cloud</option>
-          </select>
-          <input id="pollQ" placeholder="Your question" class="w360" />
-          <button id="sendPoll" class="primary pill">Send to trainees</button>
-          <button id="savePoll" class="pill">Save poll</button>
+      <div>
+        <details id="savedAcc" class="card">
+          <summary>Saved polls</summary>
+          <div id="savedList" class="mt12 mini muted">No saved polls.</div>
+        </details>
+        <details id="createAcc" class="card" open>
+          <summary>Create a poll</summary>
+          <div class="row gap12">
+            <select id="pollType">
+              <option value="mc">Multiple choice</option>
+              <option value="tf">True / False</option>
+              <option value="scale">1–5 Rating</option>
+              <option value="rank">Ranking</option>
+              <option value="open">Open text</option>
+              <option value="wordcloud">Word cloud</option>
+            </select>
+            <input id="pollQ" placeholder="Your question" class="w360" />
+            <button id="sendPoll" class="primary pill">Send to trainees</button>
+            <button id="savePoll" class="pill">Save poll</button>
+          </div>
+          <div class="mt12" id="choicesWrap">
+            <div class="row gap6 mt8"><input class="choice" placeholder="Choice A"/><input class="choice" placeholder="Choice B"/><input class="choice" placeholder="Choice C"/></div>
+          </div>
+          <div class="row gap12 mt12">
+            <label class="mini muted"><input id="timed" type="checkbox"/> Timed (seconds)</label>
+            <input id="secs" type="number" value="20" class="w80"/>
+            <label class="mini muted"><input id="correctEnable" type="checkbox"/> Mark correct answer</label>
+            <input id="correctKey" placeholder="A/B/C... or True/False" class="w160"/>
+            <label class="mini muted" id="multiWrap"><input id="multiMC" type="checkbox"/> Allow multi-select (MC)</label>
+            <label class="mini muted"><input id="scoreEnable" type="checkbox" checked/> Scoring</label>
+          </div>
+          <div class="row gap12 mt8">
+            <label class="mini muted"><input id="allowChange" type="checkbox" checked/> Allow answer change before time ends</label>
+            <label class="mini muted"><input id="wcLimit" type="number" value="3" class="w80"/> Word cloud: max words</label>
+            <label class="mini muted"><input id="openChars" type="number" value="120" class="w100"/> Open text: max chars</label>
+          </div>
+        </details>
+      </div>
+      <div>
+        <div class="card">
+          <h2>Live results</h2>
+          <div class="progress"><div id="timerBar"></div></div>
+          <div id="resultsArea" class="mt12 muted">Waiting for votes…</div>
         </div>
-        <div class="mt12" id="choicesWrap">
-          <div class="row gap6 mt8"><input class="choice" placeholder="Choice A"/><input class="choice" placeholder="Choice B"/><input class="choice" placeholder="Choice C"/></div>
-        </div>
-        <div class="row gap12 mt12">
-          <label class="mini muted"><input id="timed" type="checkbox"/> Timed (seconds)</label>
-          <input id="secs" type="number" value="20" class="w80"/>
-          <label class="mini muted"><input id="correctEnable" type="checkbox"/> Mark correct answer</label>
-          <input id="correctKey" placeholder="A/B/C... or True/False" class="w160"/>
-          <label class="mini muted"><input id="multiMC" type="checkbox"/> Allow multi-select (MC)</label>
-        </div>
-        <div class="row gap12 mt8">
-          <label class="mini muted"><input id="allowChange" type="checkbox" checked/> Allow answer change before time ends</label>
-          <label class="mini muted"><input id="wcLimit" type="number" value="3" class="w80"/> Word cloud: max words</label>
-          <label class="mini muted"><input id="openChars" type="number" value="120" class="w100"/> Open text: max chars</label>
+        <div class="card" id="qaHost">
+          <h2>Q&A</h2>
+          <div id="qaList" class="mini muted">No questions yet.</div>
         </div>
       </div>
-
-      <div class="card">
-        <h2>Live results</h2>
-        <div class="progress"><div id="timerBar"></div></div>
-        <div id="resultsArea" class="mt12 muted">Waiting for votes…</div>
-      </div>
-
-      <div class="card" id="qaHost">
-        <h2>Q&A</h2>
-        <div id="qaList" class="mini muted">No questions yet.</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- SAVED POLLS -->
-  <div id="saved" class="slide">
-    <div class="card">
-      <h2>Saved polls</h2>
-      <div id="savedList" class="mt12 mini muted">No saved polls.</div>
     </div>
   </div>
 

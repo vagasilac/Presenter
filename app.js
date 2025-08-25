@@ -180,6 +180,16 @@ setTimeout(drawComparative, 60);
 // ---------- WebSocket realtime ----------
 const rtState={scores:{}, currentPoll:null, answers:{}, timer:null, timeLeft:0, reactions:{}, qa:{}};
 
+function renderParticipants(){
+  const list=$('#participantList');
+  const count=$('#participantCount');
+  if(!list||!count) return;
+  const entries=Object.values(rtState.scores);
+  count.textContent=String(entries.length);
+  if(!entries.length){ list.textContent='No participants yet.'; return; }
+  list.innerHTML=entries.map(e=>`<div class="chip">${e.avatar||'🙂'} ${e.name||'Guest'}</div>`).join(' ');
+}
+
 function send(obj){ if(!WS||WS.readyState!==1) return; WS.send(JSON.stringify(obj)); }
 function handle(msg){
   if(!msg || (msg.room && msg.room!==ROOM)) return;
@@ -189,8 +199,8 @@ function handle(msg){
     case 'announce': addClient(msg.id,msg.name,msg.avatar); break;
     case 'poll': rtState.currentPoll=msg.poll; rtState.answers={}; renderClientPoll(); renderResults(); startTimer(msg.poll); break;
     case 'answer': rtState.answers[msg.id]=msg.answer; renderResults(); break;
-    case 'scores': rtState.scores=msg.scores||rtState.scores; renderLeader(); break;
-    case 'reset': rtState.scores={}; renderLeader(); break;
+    case 'scores': rtState.scores=msg.scores||rtState.scores; renderLeader(); renderParticipants(); break;
+    case 'reset': rtState.scores={}; renderLeader(); renderParticipants(); break;
     case 'react': rtState.reactions[msg.emoji]=(rtState.reactions[msg.emoji]||0)+1; renderReactions(); send({t:'react_update', room:ROOM, reactions:rtState.reactions}); break;
     case 'react_update': rtState.reactions = msg.reactions || rtState.reactions; renderReactions(); break;
     case 'roster': setRoster(msg.avatars || []); break;
@@ -198,7 +208,9 @@ function handle(msg){
   }
 }
 
-function addClient(id,name,avatar){ if(!rtState.scores[id]) rtState.scores[id]={name,points:0,avatar:avatar||'🙂'} }
+function addClient(id,name,avatar){ if(!rtState.scores[id]) rtState.scores[id]={name,points:0,avatar:avatar||'🙂'}; renderParticipants(); }
+
+renderParticipants();
 
 function connectWS(){ const url=$('#wsUrl')?.value?.trim(); if(!url) return toast('Enter WebSocket URL');
   $('#connState').textContent='connecting…';
@@ -222,13 +234,21 @@ function connectWS(){ const url=$('#wsUrl')?.value?.trim(); if(!url) return toas
 
 // ---------- Polls (host) ----------
 (function(){ const t=$('#pollType'); if(!t) return; // host UI exists only on presenter
-  t.addEventListener('change',()=>{ $('#choicesWrap').style.display = (t.value==='mc' || t.value==='rank')?'block':'none'; });
+  const choicesWrap=$('#choicesWrap');
+  const multiWrap=$('#multiWrap');
+  const savedAcc=$('#savedAcc'), createAcc=$('#createAcc');
+  if(savedAcc && createAcc){
+    savedAcc.addEventListener('toggle',()=>{ if(savedAcc.open) createAcc.open=false; });
+    createAcc.addEventListener('toggle',()=>{ if(createAcc.open) savedAcc.open=false; });
+  }
+  function syncPollType(){ const v=t.value; if(choicesWrap) choicesWrap.style.display=(v==='mc')?'block':'none'; if(multiWrap) multiWrap.style.display=(v==='mc')?'inline-flex':'none'; }
+  t.addEventListener('change',syncPollType); syncPollType();
   function buildPoll(){
     const type=$('#pollType').value; const q=$('#pollQ').value.trim(); if(!q){ toast('Enter a question'); return null; }
-    let choices=null; if(type==='mc' || type==='rank'){ choices=[...$$('#choicesWrap .choice')].map(i=>i.value).filter(Boolean); if(choices.length<2){ toast('Need 2+ choices'); return null; } }
+    let choices=null; if(type==='mc'){ choices=[...$$('#choicesWrap .choice')].map(i=>i.value).filter(Boolean); if(choices.length<2){ toast('Need 2+ choices'); return null; } }
     const timed=$('#timed').checked? Number($('#secs').value||20):0;
     const correct=$('#correctEnable').checked? $('#correctKey').value.trim():null;
-    return { id:uid(), type, q, choices, timed, correct, multi: $('#multiMC').checked, allowChange: $('#allowChange').checked, maxWords: Number($('#wcLimit').value||3), maxChars: Number($('#openChars').value||120) };
+    return { id:uid(), type, q, choices, timed, correct, multi: $('#multiMC').checked, allowChange: $('#allowChange').checked, maxWords: Number($('#wcLimit').value||3), maxChars: Number($('#openChars').value||120), score: $('#scoreEnable').checked };
   }
   function startSaved(poll){
     rtState.currentPoll=poll; rtState.answers={}; startTimer(poll); renderResults(); send({t:'poll',room:ROOM,poll});
@@ -262,10 +282,10 @@ function renderResults(){ const area=$('#resultsArea'); const poll=rtState.curre
     html += '<div class="mt8">'+ (items.length? items.map(t=>`<div class="chip" style="margin:4px 4px 0 0">${t}</div>`).join('') : 'No responses yet.') + '</div>';
   }
   else if(poll.type==='rank'){
-    const opts = poll.choices||[]; const score={}; const n = opts.length;
-    Object.values(answers).forEach(order=>{ (order||[]).forEach((label,idx)=>{ const pts = (n-idx); score[label]=(score[label]||0)+pts; }); });
-    const sorted = Object.entries(score).sort((a,b)=>b[1]-a[1]);
-    sorted.forEach(([label,pts])=>{ html += bar(label, pts|0); });
+    const freq={}; Object.values(answers).forEach(v=>{ const num=Number(v); if(!isNaN(num)) freq[num]=(freq[num]||0)+1; });
+    const entries=Object.entries(freq).sort((a,b)=>Number(a[0])-Number(b[0]));
+    entries.forEach(([num,n])=>{ html+=bar(String(num),n); });
+    if(poll.correct!=null) html+=`<div class="mt8 mini">Correct: ${poll.correct}</div>`;
   }
   else { html += '<div class="mini muted">Type not supported yet on host results.</div>'; }
   html+='</div>'; area.innerHTML=html;
@@ -274,8 +294,8 @@ function renderResults(){ const area=$('#resultsArea'); const poll=rtState.curre
 
 function renderLeader(){ const t=$('#leaderTable'); if(!t) return; const rows=Object.entries(rtState.scores).sort((a,b)=>b[1].points-a[1].points); let html='<tr><td>#</td><td>Name</td><td>Points</td></tr>'; rows.forEach(([id,info],i)=>{ const av=(info&&info.avatar)||'🙂'; html+=`<tr><td>${i+1}</td><td>${av} ${(info&&info.name)||id}</td><td>${(info&&info.points)|0}</td></tr>`; }); t.innerHTML=html }
 
-function finalizePoll(){ const poll=rtState.currentPoll; if(!poll) return; let correctKey=null; if(poll.correct) correctKey=poll.correct.trim(); const base=100; for(const [id,ans] of Object.entries(rtState.answers)){ if(!rtState.scores[id]) rtState.scores[id]={name:'Guest',points:0,avatar:'🙂'}; let ok=true; if(correctKey!=null){ ok = String(ans).toLowerCase()===String(correctKey).toLowerCase(); } if(ok) rtState.scores[id].points += base; } renderLeader(); send({t:'scores',room:ROOM,scores:rtState.scores}); toast('Poll finished. Scores updated.'); }
-$('#resetScores')?.addEventListener('click',()=>{ rtState.scores={}; renderLeader(); send({t:'reset',room:ROOM}) });
+function finalizePoll(){ const poll=rtState.currentPoll; if(!poll) return; if(!poll.score){ toast('Poll finished.'); return; } let correctKey=null; if(poll.correct!=null) correctKey=poll.correct; const base=100; for(const [id,ans] of Object.entries(rtState.answers)){ if(!rtState.scores[id]) rtState.scores[id]={name:'Guest',points:0,avatar:'🙂'}; let ok=true; if(correctKey!=null){ if(poll.type==='rank'){ ok = Number(ans)===Number(correctKey); } else { ok = String(ans).toLowerCase()===String(correctKey).toLowerCase(); } } if(ok) rtState.scores[id].points += base; } renderLeader(); send({t:'scores',room:ROOM,scores:rtState.scores}); toast('Poll finished. Scores updated.'); }
+$('#resetScores')?.addEventListener('click',()=>{ rtState.scores={}; renderLeader(); renderParticipants(); send({t:'reset',room:ROOM}) });
 
 // ---------- Reactions (host agg) ----------
 function renderReactions(){ const host = $('#resultsArea'); if(!host) return; const line = Object.entries(rtState.reactions).map(([k,v])=>`${k} ${v|0}`).join('  '); const id='rxline'; let el=$('#'+id); if(!el){ el=document.createElement('div'); el.id=id; el.className='mini'; host.prepend(el); } el.textContent = line ? ('Reactions: '+line) : ''; }
@@ -292,12 +312,13 @@ function renderClientPoll(){ if(ROLE!=='client') return; const area=$('#clientAr
   else if(poll.type==='scale'){ html+='<div class="row mt8">'+[1,2,3,4,5].map(v=>`<button data-ans="${v}" class="pill ghost">${v}</button>`).join('')+'</div>'; }
   else if(poll.type==='wordcloud'){ const max = rtState.currentPoll.maxWords||3; html += `<div class="row mt8"><input id="wcInput" placeholder="Enter up to ${max} words (comma/space separated)" style="flex:1"/></div><button id="wcSend" class="pill primary mt8">Send</button>`; }
   else if(poll.type==='open'){ html += `<div class="row mt8"><input id="openInput" placeholder="${rtState.currentPoll.maxChars||120} chars max" style="flex:1"/></div><button id="openSend" class="pill primary mt8">Send</button>`; }
-  else if(poll.type==='rank'){ const opts=(poll.choices||[]).slice(); html+='<div id="rankList" class="mt8" style="display:grid;gap:8px"></div><button id="rankSend" class="pill primary mt8">Submit order</button>'; area.innerHTML=html; const list=$('#rankList'); list.innerHTML = opts.map((o,i)=>`<div class="card" draggable="true" data-k="${i}" style="padding:8px">${o}</div>`).join(''); let drag=null; list.addEventListener('dragstart',e=>{drag=e.target.closest('[draggable]')}); list.addEventListener('dragover',e=>{e.preventDefault(); const tgt=e.target.closest('[draggable]'); if(!tgt||tgt===drag) return; const rect=tgt.getBoundingClientRect(); const before=(e.clientY-rect.top) < rect.height/2; list.insertBefore(drag, before?tgt:tgt.nextSibling);}); $('#rankSend').onclick=()=>{ const order=[...list.children].map(el=>el.textContent); lockClient('Ranking sent ✓'); send({t:'answer', room:ROOM, id:CLIENT_ID, pollId:poll.id, answer: order}); }; return; }
+  else if(poll.type==='rank'){ html+='<div class="row mt8"><input id="rankInput" type="number" class="w100" placeholder="Enter number"/></div><button id="rankSend" class="pill primary mt8">Send</button>'; }
   else { html+='<div class="mini muted mt8">This question type will be supported soon.</div>'; }
   html+='</div>'; area.innerHTML=html;
   $$('#clientArea button.pill.ghost').forEach(b=>b.onclick=()=>{ if(clientLocked && !rtState.currentPoll.allowChange) return; lockClient('Answer sent ✓'); send({t:'answer',room:ROOM,id:CLIENT_ID,pollId:poll.id,answer:b.dataset.ans}); });
   const wcs=$('#wcSend'); if(wcs) wcs.onclick=()=>{ const raw = ($('#wcInput').value||'').trim(); if(!raw) return; let words=raw.split(/[\s,]+/).filter(Boolean).slice(0, rtState.currentPoll.maxWords||3); lockClient('Sent ✓'); send({t:'answer', room:ROOM, id:CLIENT_ID, pollId:poll.id, answer: words}); };
   const os=$('#openSend'); if(os) os.onclick=()=>{ let txt = ($('#openInput').value||'').slice(0, rtState.currentPoll.maxChars||120); if(!txt) return; lockClient('Sent ✓'); send({t:'answer', room:ROOM, id:CLIENT_ID, pollId:poll.id, answer: txt}); };
+  const rs=$('#rankSend'); if(rs) rs.onclick=()=>{ const val=$('#rankInput').value; if(val==='') return; lockClient('Sent ✓'); send({t:'answer', room:ROOM, id:CLIENT_ID, pollId:poll.id, answer: Number(val)}); };
 }
 function lockClient(msg){ clientLocked=true; const area=$('#clientArea'); if(!area) return; area.querySelectorAll('button, input').forEach(el=>el.disabled=true); toast(msg); try{ navigator.vibrate&&navigator.vibrate(20) }catch(_){} }
 
