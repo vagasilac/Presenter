@@ -108,7 +108,7 @@ pre{white-space:pre-wrap;word-wrap:break-word}
 .page .content{position:relative;z-index:1}
 .page canvas.whiteboard{position:absolute;inset:0;z-index:2; pointer-events:none;}
 /* Drawing cursor and pointer activation only when ON */
-.ink-on .whiteboard{pointer-events:auto; cursor:crosshair}
+body.ink-on canvas.whiteboard{pointer-events:auto; cursor:crosshair}
 
 /* FAB + toolbar */
 .fab{position:fixed;right:18px;bottom:18px;z-index:1000;background:#0f2a42;border:1px solid #1e3954;border-radius:999px;padding:12px;cursor:pointer;box-shadow:0 12px 28px rgba(0,0,0,.5);backdrop-filter:blur(6px);transition:transform .1s ease, background .2s ease}
