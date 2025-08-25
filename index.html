@@ -22,6 +22,7 @@
         <div class="tab" data-tab="session">Session</div>
         <div class="tab active" data-tab="presentation">Presentation</div>
         <div class="tab" data-tab="polls">Live Polls</div>
+        <div class="tab" data-tab="saved">Saved Polls</div>
         <div class="tab" data-tab="leader">Leaderboard</div>
       </div>
 
@@ -179,6 +180,7 @@
           </select>
           <input id="pollQ" placeholder="Your question" class="w360" />
           <button id="sendPoll" class="primary pill">Send to trainees</button>
+          <button id="savePoll" class="pill">Save poll</button>
         </div>
         <div class="mt12" id="choicesWrap">
           <div class="row gap6 mt8"><input class="choice" placeholder="Choice A"/><input class="choice" placeholder="Choice B"/><input class="choice" placeholder="Choice C"/></div>
@@ -207,6 +209,14 @@
         <h2>Q&A</h2>
         <div id="qaList" class="mini muted">No questions yet.</div>
       </div>
+    </div>
+  </div>
+
+  <!-- SAVED POLLS -->
+  <div id="saved" class="slide">
+    <div class="card">
+      <h2>Saved polls</h2>
+      <div id="savedList" class="mt12 mini muted">No saved polls.</div>
     </div>
   </div>
 
@@ -263,6 +273,7 @@
 
 <div id="miniQR" class="mini-qr" title="Drag corner to resize"></div>
 
+<script src="./savedPolls.js"></script>
 <script src="./app.js"></script>
 
 </body>

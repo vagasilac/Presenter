@@ -223,15 +223,21 @@ function connectWS(){ const url=$('#wsUrl')?.value?.trim(); if(!url) return toas
 // ---------- Polls (host) ----------
 (function(){ const t=$('#pollType'); if(!t) return; // host UI exists only on presenter
   t.addEventListener('change',()=>{ $('#choicesWrap').style.display = (t.value==='mc' || t.value==='rank')?'block':'none'; });
-  const sendBtn = $('#sendPoll');
-  if(sendBtn) sendBtn.addEventListener('click',()=>{
-    const type=$('#pollType').value; const q=$('#pollQ').value.trim(); if(!q) return toast('Enter a question');
-    let choices=null; if(type==='mc' || type==='rank'){ choices=[...$$('#choicesWrap .choice')].map(i=>i.value).filter(Boolean); if(choices.length<2) return toast('Need 2+ choices') }
+  function buildPoll(){
+    const type=$('#pollType').value; const q=$('#pollQ').value.trim(); if(!q){ toast('Enter a question'); return null; }
+    let choices=null; if(type==='mc' || type==='rank'){ choices=[...$$('#choicesWrap .choice')].map(i=>i.value).filter(Boolean); if(choices.length<2){ toast('Need 2+ choices'); return null; } }
     const timed=$('#timed').checked? Number($('#secs').value||20):0;
     const correct=$('#correctEnable').checked? $('#correctKey').value.trim():null;
-    const poll={ id:uid(), type, q, choices, timed, correct, multi: $('#multiMC').checked, allowChange: $('#allowChange').checked, maxWords: Number($('#wcLimit').value||3), maxChars: Number($('#openChars').value||120) };
+    return { id:uid(), type, q, choices, timed, correct, multi: $('#multiMC').checked, allowChange: $('#allowChange').checked, maxWords: Number($('#wcLimit').value||3), maxChars: Number($('#openChars').value||120) };
+  }
+  function startSaved(poll){
     rtState.currentPoll=poll; rtState.answers={}; startTimer(poll); renderResults(); send({t:'poll',room:ROOM,poll});
-  });
+  }
+  const sendBtn = $('#sendPoll');
+  if(sendBtn) sendBtn.addEventListener('click',()=>{ const poll=buildPoll(); if(!poll) return; startSaved(poll); });
+  const saveBtn = $('#savePoll');
+  if(saveBtn) saveBtn.addEventListener('click',()=>{ const poll=buildPoll(); if(!poll) return; SavedPolls.savePoll(poll); SavedPolls.renderSavedPolls($('#savedList'), startSaved); toast('Poll saved'); });
+  SavedPolls.renderSavedPolls($('#savedList'), startSaved);
 })();
 
 function startTimer(poll){ clearInterval(rtState.timer); rtState.timeLeft=poll.timed||0; updateTimerBar(); if(!poll.timed) return; rtState.timer=setInterval(()=>{ rtState.timeLeft--; updateTimerBar(); send({t:'tick', room:ROOM, left:rtState.timeLeft}); if(rtState.timeLeft<=0){ clearInterval(rtState.timer); finalizePoll(); } },1000); }
