@@ -21,10 +21,20 @@
       `<button data-i="${i}" class="delete pill danger mini">Delete</button></div>`
     ).join('');
     container.querySelectorAll('button.start').forEach(btn=>{
-      btn.onclick = ()=>{ const poll=polls[Number(btn.dataset.i)]; startCb && startCb(poll); };
+      btn.addEventListener('click', (ev)=>{
+        ev.preventDefault();
+        const poll = polls[Number(btn.dataset.i)];
+        if(startCb) startCb(poll);
+      });
     });
     container.querySelectorAll('button.delete').forEach(btn=>{
-      btn.onclick = ()=>{ const idx=Number(btn.dataset.i); polls.splice(idx,1); localStorage.setItem('savedPolls', JSON.stringify(polls)); renderSavedPolls(container,startCb); };
+      btn.addEventListener('click', (ev)=>{
+        ev.preventDefault();
+        const idx = Number(btn.dataset.i);
+        polls.splice(idx,1);
+        localStorage.setItem('savedPolls', JSON.stringify(polls));
+        renderSavedPolls(container,startCb);
+      });
     });
   }
   global.SavedPolls = { loadSavedPolls, savePoll, renderSavedPolls };
