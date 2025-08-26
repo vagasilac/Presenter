@@ -320,17 +320,28 @@ function finalizePoll(){
   let correctKey=null;
   if(poll.correct!=null) correctKey=poll.correct;
   const base=100;
-  for(const [id,ans] of Object.entries(rtState.answers)){
-    if(!rtState.scores[id]) rtState.scores[id]={name:'Guest',points:0,avatar:'🙂'};
-    let ok=true;
-    if(correctKey!=null){
-      if(poll.type==='rank'){
-        ok = Number(ans)===Number(correctKey);
-      } else {
+
+  if(poll.type==='rank' && correctKey!=null){
+    // Determine smallest difference from correct answer
+    let minDiff = Infinity;
+    for(const ans of Object.values(rtState.answers)){
+      const d = Math.abs(Number(ans) - Number(correctKey));
+      if(d < minDiff) minDiff = d;
+    }
+    for(const [id,ans] of Object.entries(rtState.answers)){
+      if(!rtState.scores[id]) rtState.scores[id]={name:'Guest',points:0,avatar:'🙂'};
+      const d = Math.abs(Number(ans) - Number(correctKey));
+      if(d === minDiff) rtState.scores[id].points += base;
+    }
+  } else {
+    for(const [id,ans] of Object.entries(rtState.answers)){
+      if(!rtState.scores[id]) rtState.scores[id]={name:'Guest',points:0,avatar:'🙂'};
+      let ok=true;
+      if(correctKey!=null){
         ok = String(ans).toLowerCase()===String(correctKey).toLowerCase();
       }
+      if(ok) rtState.scores[id].points += base;
     }
-    if(ok) rtState.scores[id].points += base;
   }
   renderLeader();
   send({t:'scores',room:ROOM,scores:rtState.scores});
