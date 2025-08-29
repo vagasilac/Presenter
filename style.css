@@ -92,8 +92,14 @@ button:hover{opacity:.95}
 .toast{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:#102030;border:1px solid #234;box-shadow:0 10px 30px rgba(0,0,0,.35);color:#cfe7ff;padding:10px 14px;border-radius:12px;display:none;z-index:2000}
 
 /* Reaction bubbles */
-.reaction-bubble{position:fixed;bottom:10px;font-size:32px;pointer-events:none;animation:react-bubble 2s ease-out forwards;z-index:1500}
-@keyframes react-bubble{from{transform:translateY(0) scale(1);opacity:.9}to{transform:translateY(-160px) scale(1.4);opacity:0}}
+.reaction-bubble{position:fixed;bottom:10px;font-size:32px;pointer-events:none;animation:react-bubble 5s ease-out forwards;z-index:1500}
+@keyframes react-bubble{
+  0%{transform:translate(0,0) scale(1);opacity:.9}
+  25%{transform:translate(var(--shift), -25vh) scale(1.1)}
+  50%{transform:translate(calc(var(--shift) * -1), -50vh) scale(1.2)}
+  75%{transform:translate(var(--shift), -75vh) scale(1.3)}
+  100%{transform:translate(calc(var(--shift) * -1), -100vh) scale(1.4);opacity:0}
+}
 
 /* Progress */
 .progress{height:8px;background:#142030;border:1px solid #223447;border-radius:999px;overflow:hidden}

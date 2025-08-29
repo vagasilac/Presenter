@@ -359,8 +359,9 @@ function showReactionBubble(emoji){
   b.textContent=emoji;
   const max=Math.max(0,window.innerWidth-40);
   b.style.left=Math.floor(Math.random()*max)+'px';
+  b.style.setProperty('--shift',(Math.random()*120-60)+'px');
   document.body.appendChild(b);
-  setTimeout(()=>b.remove(),2000);
+  setTimeout(()=>b.remove(),5000);
 }
 
 // ---------- Q&A (host) ----------
