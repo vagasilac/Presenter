@@ -137,7 +137,14 @@ body.ink-on canvas.whiteboard{pointer-events:auto; cursor:crosshair}
 .rel{position:relative}
 
 /* Avatar picker */
+#avatarPick{justify-content:center}
+#avatarPick button{font-size:32px}
 #avatarPick button.active{ outline:2px solid #2aa6ff; }
+
+/* Join form */
+#joinForm{display:flex;flex-direction:column;align-items:center}
+#joinPreview{display:flex;align-items:center;gap:12px;justify-content:center;margin-bottom:12px}
+#joinPreview .emoji{font-size:40px}
 
 /* Session helpers */
 .session-grid{display:grid;grid-template-columns:1fr;gap:12px}

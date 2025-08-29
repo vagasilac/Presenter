@@ -18,7 +18,7 @@ let ROOM = localStorage.getItem('room') || uid();
 let WS = null;
 let NAME = localStorage.getItem('name') || '';
 let CLIENT_ID = localStorage.getItem('clientId') || uid();
-let AVATAR = localStorage.getItem('avatar') || '🙂';
+let AVATAR = localStorage.getItem('avatar') || '';
 
 // Reflect room in header badge
 (function(){ const b = $('#roomId'); if(b) b.textContent = ROOM; })();
@@ -217,8 +217,8 @@ function connectWS(){ const url=$('#wsUrl')?.value?.trim(); if(!url) return toas
   try{ WS=new WebSocket(url);}catch(e){ $('#connState').textContent='disconnected'; return toast('Invalid WS URL') }
   WS.onopen=()=>{ $('#connState').textContent='connected'; send({t:'hello',room:ROOM,role:ROLE,name:NAME});
     if(ROLE==='client' && (localStorage.getItem('joined')==='1')){
-      NAME = localStorage.getItem('name') || genCodeName();
       AVATAR = localStorage.getItem('avatar') || '🙂';
+      NAME = localStorage.getItem('name') || genCodeName(AVATAR);
       CLIENT_ID = localStorage.getItem('clientId') || CLIENT_ID;
       send({t:'announce',room:ROOM,id:CLIENT_ID,name:NAME,avatar:AVATAR});
       hideJoinUI(); updateYouAre();
@@ -377,19 +377,23 @@ function lockClient(msg){ clientLocked=true; const area=$('#clientArea'); if(!ar
 // ---------- Anonymous join + avatars ----------
 let USED_AVATARS = new Set();
 const AVATARS = ['🙂','😀','😎','🤓','🤠','🧐','🤖','👾','👻','🎩','🧠','🦾','🪄','🐱','🐶','🦊','🐼','🐵','🐯','🦁','🐨','🦄','🐸','🐙','🐢','🐳','🦉','🦅','🦆','🦜','🐝','🦋','🐞','🦖','🐲','🐉','🔥','⚡','❄️','🌞','🌙','⭐','🌈','💎','🧊','🍀','🍉'];
-function genCodeName(){ const adj=['Brave','Calm','Swift','Clever','Mighty','Quiet','Sunny','Lucky','Nimble','True','Noble','Witty','Zen','Bold','Bright']; const animal=['Falcon','Tiger','Panda','Otter','Wolf','Fox','Hawk','Koala','Dragon','Lynx','Dolphin','Eagle','Bison','Orca','Raven']; const n=Math.floor(Math.random()*90)+10; return `${adj[Math.floor(Math.random()*adj.length)]}-${animal[Math.floor(Math.random()*animal.length)]}-${n}`; }
+const EMOJI_NAMES = {
+  '🙂':'Smile','😀':'Grin','😎':'Cool','🤓':'Nerd','🤠':'Cowboy','🧐':'Thinker','🤖':'Robot','👾':'Alien','👻':'Ghost','🎩':'Tophat','🧠':'Brain','🦾':'Cyborg','🪄':'Wand','🐱':'Cat','🐶':'Dog','🦊':'Fox','🐼':'Panda','🐵':'Monkey','🐯':'Tiger','🦁':'Lion','🐨':'Koala','🦄':'Unicorn','🐸':'Frog','🐙':'Octopus','🐢':'Turtle','🐳':'Whale','🦉':'Owl','🦅':'Eagle','🦆':'Duck','🦜':'Parrot','🐝':'Bee','🦋':'Butterfly','🐞':'Ladybug','🦖':'Dino','🐲':'Dragon','🐉':'Dragon','🔥':'Fire','⚡':'Bolt','❄️':'Snow','🌞':'Sun','🌙':'Moon','⭐':'Star','🌈':'Rainbow','💎':'Gem','🧊':'Ice','🍀':'Clover','🍉':'Melon'
+};
+function genCodeName(av){ const adj=['Brave','Calm','Swift','Clever','Mighty','Quiet','Sunny','Lucky','Nimble','True','Noble','Witty','Zen','Bold','Bright']; const base=EMOJI_NAMES[av]||'Friend'; const n=Math.floor(Math.random()*90)+10; return `${adj[Math.floor(Math.random()*adj.length)]}-${base}-${n}`; }
 function setRoster(list){ USED_AVATARS = new Set(list||[]); renderAvatars(); }
-function renderAvatars(){ const wrap = $('#avatarPick'); if(!wrap) return; wrap.innerHTML = AVATARS.map(a=>{ const taken = USED_AVATARS.has(a); return `<button class="pill ghost" data-av="${a}" style="font-size:18px;opacity:${taken?0.35:1}" ${taken?'disabled':''}>${a}</button>`; }).join(''); $$('#avatarPick button').forEach(b=>b.onclick=()=>{ if(b.disabled) return; AVATAR = b.dataset.av; localStorage.setItem('avatar', AVATAR); $$('#avatarPick button').forEach(x=>x.classList.remove('active')); b.classList.add('active'); toast('Avatar selected'); }); }
+function updatePreview(){ const el=$('#preview'); if(!el) return; if(!AVATAR){ el.innerHTML='<span class="muted">Pick an avatar</span>'; return; } if(!NAME) NAME = genCodeName(AVATAR); el.innerHTML=`<span class="emoji">${AVATAR}</span><span class="chip">${NAME}</span>`; }
+function renderAvatars(){ const wrap = $('#avatarPick'); if(!wrap) return; wrap.innerHTML = AVATARS.map(a=>{ const taken = USED_AVATARS.has(a); return `<button class="pill ghost" data-av="${a}" style="opacity:${taken?0.35:1}" ${taken?'disabled':''}>${a}</button>`; }).join(''); $$('#avatarPick button').forEach(b=>{ if(b.dataset.av===AVATAR) b.classList.add('active'); b.onclick=()=>{ if(b.disabled) return; AVATAR = b.dataset.av; NAME = genCodeName(AVATAR); localStorage.setItem('avatar', AVATAR); $$('#avatarPick button').forEach(x=>x.classList.remove('active')); b.classList.add('active'); updatePreview(); toast('Avatar selected'); }; }); updatePreview(); }
 renderAvatars();
-function showJoinUI(){ $('#joinForm').style.display='flex'; $('#youAre').style.display='none'; const ch=$('#clientHeader'); if(ch){ ch.textContent='Join'; ch.style.display='block'; } $('#clientArea').style.display='none'; $('#reactRow').style.display='none'; $('#qaForm').classList.add('hidden'); }
+function showJoinUI(){ $('#joinForm').style.display='flex'; $('#youAre').style.display='none'; const ch=$('#clientHeader'); if(ch){ ch.textContent='Join'; ch.style.display='block'; } $('#clientArea').style.display='none'; $('#reactRow').style.display='none'; $('#qaForm').classList.add('hidden'); updatePreview(); }
 function hideJoinUI(){ $('#joinForm').style.display='none'; $('#youAre').style.display='flex'; const ch=$('#clientHeader'); if(ch){ ch.style.display='none'; } $('#clientArea').style.display='block'; $('#reactRow').style.display='flex'; $('#qaForm').classList.add('hidden'); }
 function updateYouAre(){ const el=$('#youAre'); if(!el) return; el.innerHTML=`You are: <span style="font-size:18px">${AVATAR||'🙂'}</span> <span class="chip">${NAME||''}</span>`; }
 
 // Sticky join for clients
-(function(){ const wasJoined = localStorage.getItem('joined')==='1'; if (ROLE==='client' && wasJoined){ NAME = localStorage.getItem('name') || genCodeName(); AVATAR = localStorage.getItem('avatar') || '🙂'; CLIENT_ID = localStorage.getItem('clientId') || CLIENT_ID; hideJoinUI(); updateYouAre(); }})();
+(function(){ const wasJoined = localStorage.getItem('joined')==='1'; if (ROLE==='client' && wasJoined){ AVATAR = localStorage.getItem('avatar') || '🙂'; NAME = localStorage.getItem('name') || genCodeName(AVATAR); CLIENT_ID = localStorage.getItem('clientId') || CLIENT_ID; hideJoinUI(); updateYouAre(); }})();
 
 // Join button
-$('#joinBtn')?.addEventListener('click', ()=>{ if(!AVATAR || USED_AVATARS.has(AVATAR)) { toast('Pick an available avatar'); return; } NAME = genCodeName(); localStorage.setItem('name', NAME); localStorage.setItem('clientId', CLIENT_ID); localStorage.setItem('avatar', AVATAR); localStorage.setItem('joined', '1'); send({t:'announce',room:ROOM,id:CLIENT_ID,name:NAME,avatar:AVATAR}); hideJoinUI(); updateYouAre(); toast(`Joined as ${AVATAR} ${NAME}`); });
+$('#joinBtn')?.addEventListener('click', ()=>{ if(!AVATAR || USED_AVATARS.has(AVATAR)) { toast('Pick an available avatar'); return; } if(!NAME) NAME = genCodeName(AVATAR); localStorage.setItem('name', NAME); localStorage.setItem('clientId', CLIENT_ID); localStorage.setItem('avatar', AVATAR); localStorage.setItem('joined', '1'); send({t:'announce',room:ROOM,id:CLIENT_ID,name:NAME,avatar:AVATAR}); hideJoinUI(); updateYouAre(); toast(`Joined as ${AVATAR} ${NAME}`); });
 
 // Reactions (client)
 (function(){ const EMO = ['👏','👍','🎉','🤯','😅']; const bar = $('#reactBar'); if(!bar) return; bar.innerHTML = EMO.map(e=>`<button class="pill ghost" data-emo="${e}" style="font-size:18px">${e}</button>`).join(''); bar.addEventListener('click',(ev)=>{ const b=ev.target.closest('button[data-emo]'); if(!b) return; send({t:'react', room:ROOM, id:CLIENT_ID, emoji:b.dataset.emo}); }); })();
