@@ -512,27 +512,62 @@ $('#qaSend')?.addEventListener('click',()=>{ const txt = $('#qaInput').value.tri
 })();
 
 // ---------- Builds (step-by-step) ----------
-(function(){ const page=document.querySelector('.page[data-page="cml"]'); if(!page) return; const content = page.querySelector('.content'); const buildPrev=$('#buildPrev'), buildNext=$('#buildNext'), buildInfo=$('#buildInfo'), buildEdit=$('#buildEdit'), buildClear=$('#buildClear'); let currentStep=0, maxStep=0, editMode=false; const PAGE_HTML_KEY='page:cml:html'; const saved=localStorage.getItem(PAGE_HTML_KEY); if(saved){ try{ content.innerHTML=saved }catch(_){} }
-  function scanSteps(){ maxStep=0; content.querySelectorAll('[data-step]').forEach(el=>{ const s=parseInt(el.getAttribute('data-step')||'0',10); if(!isNaN(s)) maxStep=Math.max(maxStep,s); el.classList.add('rel'); }); }
-  function apply(){ content.querySelectorAll('[data-step]').forEach(el=>{ const s=parseInt(el.getAttribute('data-step')||'0',10); const visible=(s===0||s<=currentStep); el.classList.toggle('build-hidden', !visible); el.classList.toggle('build-visible', visible); let tag=el.querySelector(':scope>.build-tag'); if(editMode){ if(!tag){ tag=document.createElement('div'); tag.className='build-tag'; el.prepend(tag); } tag.textContent='S'+s; } else if(tag){ tag.remove(); } }); if(buildInfo) buildInfo.textContent=`Step ${currentStep}/${maxStep}`; }
-  function setStep(n){ currentStep=Math.max(0, Math.min(maxStep, n)); apply(); }
-  function next(){ if(currentStep<maxStep) setStep(currentStep+1); }
-  function prev(){ if(currentStep>0) setStep(currentStep-1); }
-  function saveContent(){ try{ localStorage.setItem(PAGE_HTML_KEY, content.innerHTML); }catch(_){} }
-  function clearSteps(){ content.querySelectorAll('[data-step]').forEach(el=> el.setAttribute('data-step','0')); maxStep=0; setStep(0); saveContent(); }
-  if(!content.querySelector('[data-step]')){ content.querySelectorAll('.card').forEach((el,i)=> el.setAttribute('data-step', String(i+1))); saveContent(); }
-  function onEditClick(e){ const el=e.target.closest('[data-step], .card, li, svg, h2, p'); if(!el||!content.contains(el)) return; e.preventDefault(); e.stopPropagation(); const cur=parseInt(el.getAttribute('data-step')||'0',10); const next=(cur+1) % (maxStep+2); el.setAttribute('data-step', String(next)); if(next>maxStep) maxStep=next; apply(); saveContent(); }
-  scanSteps(); setStep(0);
-  if(buildPrev) buildPrev.addEventListener('click',prev);
-  if(buildNext) buildNext.addEventListener('click',next);
-  if(buildEdit) buildEdit.addEventListener('change',(e)=>{ editMode=e.target.checked; if(editMode){ content.addEventListener('click', onEditClick); } else { content.removeEventListener('click', onEditClick); } apply(); });
-  if(buildClear) buildClear.addEventListener('click', clearSteps);
-  window.addEventListener('keydown',(e)=>{
-    const t=e.target;
-    if(t.tagName==='INPUT' || t.tagName==='TEXTAREA' || t.isContentEditable) return;
-    if(e.key==='ArrowRight' || e.key===' '){ e.preventDefault(); next(); }
-    if(e.key==='ArrowLeft'){ e.preventDefault(); prev(); }
-  });
+// ---------- Presentation builder ----------
+(function(){
+  const shell = document.querySelector('#presentation .page-shell');
+  if(!shell) return;
+
+  const prevPage=$('#prevPage'), nextPage=$('#nextPage'), pageDots=$('#pageDots');
+  const presName=$('#presName'), presNew=$('#presNew'), presAdd=$('#presAdd'), presSave=$('#presSave'), presList=$('#presList'), presLoad=$('#presLoad');
+  const buildPrev=$('#buildPrev'), buildNext=$('#buildNext'), buildInfo=$('#buildInfo'), buildEdit=$('#buildEdit'), buildClear=$('#buildClear');
+
+  let pages=[], builds=[], current=0;
+
+  function BuildState(page){
+    const content=page.querySelector('.content');
+    let currentStep=0, maxStep=0, editMode=false;
+    function scan(){ maxStep=0; content.querySelectorAll('[data-step]').forEach(el=>{ const s=parseInt(el.getAttribute('data-step')||'0',10); if(!isNaN(s)) maxStep=Math.max(maxStep,s); el.classList.add('rel'); }); }
+    function apply(){ content.querySelectorAll('[data-step]').forEach(el=>{ const s=parseInt(el.getAttribute('data-step')||'0',10); const vis=(s===0||s<=currentStep); el.classList.toggle('build-hidden', !vis); el.classList.toggle('build-visible', vis); let tag=el.querySelector(':scope>.build-tag'); if(editMode){ if(!tag){ tag=document.createElement('div'); tag.className='build-tag'; el.prepend(tag); } tag.textContent='S'+s; } else if(tag){ tag.remove(); } }); if(buildInfo) buildInfo.textContent=`Step ${currentStep}/${maxStep}`; }
+    function setStep(n){ currentStep=Math.max(0, Math.min(maxStep, n)); apply(); }
+    function next(){ if(currentStep<maxStep) setStep(currentStep+1); }
+    function prev(){ if(currentStep>0) setStep(currentStep-1); }
+    function clear(){ content.querySelectorAll('[data-step]').forEach(el=> el.setAttribute('data-step','0')); maxStep=0; setStep(0); }
+    function onEditClick(e){ const el=e.target.closest('[data-step], .card, li, svg, h2, p, img, div'); if(!el||!content.contains(el)) return; e.preventDefault(); e.stopPropagation(); const cur=parseInt(el.getAttribute('data-step')||'0',10); const nxt=(cur+1)%(maxStep+2); el.setAttribute('data-step', String(nxt)); if(nxt>maxStep) maxStep=nxt; apply(); }
+    function setEdit(on){ editMode=on; if(editMode){ content.addEventListener('click', onEditClick); } else { content.removeEventListener('click', onEditClick); } apply(); }
+    scan(); setStep(0);
+    return { next, prev, clear, setEdit, apply, setStep, get currentStep(){return currentStep;}, get maxStep(){return maxStep;} };
+  }
+
+  function refreshPages(){ pages=$$('#presentation .page-shell .page'); builds=pages.map(p=>BuildState(p)); updateDots(); showPage(0); }
+
+  function updateDots(){ if(!pageDots) return; pageDots.innerHTML=''; pages.forEach((_,i)=>{ const d=document.createElement('div'); d.className='dot'+(i===current?' active':''); d.addEventListener('click',()=>showPage(i)); pageDots.appendChild(d); }); }
+
+  function showPage(idx){ if(idx<0||idx>=pages.length) return; pages.forEach((p,i)=>{ p.style.display = i===idx?'':'none'; }); current=idx; builds[current].apply(); updateDots(); }
+
+  function createBlank(){ const page=document.createElement('div'); page.className='page'; const content=document.createElement('div'); content.className='content'; content.contentEditable='true'; content.innerHTML='<h2>Title</h2><p>Content</p>'; page.appendChild(content); shell.appendChild(page); refreshPages(); showPage(pages.length-1); }
+
+  function gather(){ return { slides: pages.map(p=>({ html: p.querySelector('.content').innerHTML })) }; }
+
+  async function save(){ const name=(presName?.value||'').trim(); if(!name){ toast('Name required'); return; } try{ await fetch('/api/presentations/'+encodeURIComponent(name), { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify(gather()) }); loadList(); toast('Saved'); }catch(_){ toast('Save failed'); } }
+
+  async function load(name){ try{ const res=await fetch('/api/presentations/'+encodeURIComponent(name)); if(!res.ok) return; const data=await res.json(); $$('#presentation .page-shell .page').forEach(p=>p.remove()); (data.slides||[]).forEach(s=>{ const page=document.createElement('div'); page.className='page'; const content=document.createElement('div'); content.className='content'; content.contentEditable='true'; content.innerHTML=s.html||''; page.appendChild(content); shell.appendChild(page); }); refreshPages(); showPage(0); presName.value=name; }catch(_){ toast('Load failed'); } }
+
+  async function loadList(){ try{ const res=await fetch('/api/presentations'); if(!res.ok) return; const arr=await res.json(); if(presList){ presList.innerHTML='<option value="">(choose)</option>'+arr.map(n=>`<option value="${n}">${n}</option>`).join(''); } }catch(_){ /* noop */ } }
+
+  if(prevPage) prevPage.addEventListener('click',()=>showPage(current-1));
+  if(nextPage) nextPage.addEventListener('click',()=>showPage(current+1));
+  if(presAdd) presAdd.addEventListener('click',createBlank);
+  if(presNew) presNew.addEventListener('click',()=>{ $$('#presentation .page-shell .page').forEach(p=>p.remove()); createBlank(); presName.value=''; });
+  if(presSave) presSave.addEventListener('click',save);
+  if(presLoad) presLoad.addEventListener('click',()=>{ const n=presList.value; if(n) load(n); });
+  if(buildPrev) buildPrev.addEventListener('click',()=>builds[current]?.prev());
+  if(buildNext) buildNext.addEventListener('click',()=>builds[current]?.next());
+  if(buildEdit) buildEdit.addEventListener('change',e=>builds[current]?.setEdit(e.target.checked));
+  if(buildClear) buildClear.addEventListener('click',()=>builds[current]?.clear());
+  window.addEventListener('keydown',e=>{ const t=e.target; if(t.tagName==='INPUT'||t.tagName==='TEXTAREA'||t.isContentEditable) return; if(e.key==='ArrowRight'||e.key===' '){ e.preventDefault(); builds[current]?.next(); } if(e.key==='ArrowLeft'){ e.preventDefault(); builds[current]?.prev(); } });
+
+  loadList();
+  refreshPages();
 })();
 
 // ---------- Boot ----------

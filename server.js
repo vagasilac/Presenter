@@ -11,6 +11,8 @@ const QRCode = require('qrcode'); // ✅ standards-compliant QR
 
 const PORT = Number(process.argv[2] || process.env.PORT || 8080);
 const PUBLIC_DIR = __dirname;
+const DATA_DIR = path.join(PUBLIC_DIR, 'presentations');
+if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
 
 const MIME = {
   '.html':'text/html; charset=utf-8', '.css':'text/css; charset=utf-8',
@@ -88,6 +90,58 @@ const server = http.createServer(async (req, res) => {
   <div class="mono">${text.replace(/</g,'&lt;')}</div>
 </div>`;
       res.writeHead(200, {'content-type':'text/html; charset=utf-8'}); res.end(page); return;
+    }
+
+    // ---- Presentation storage API ----
+    if (u.pathname === '/api/presentations' && req.method === 'GET') {
+      try {
+        const files = fs.readdirSync(DATA_DIR).filter(f => f.endsWith('.json')).map(f => f.replace(/\.json$/, ''));
+        res.writeHead(200, { 'content-type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify(files));
+      } catch (e) {
+        res.writeHead(500, { 'content-type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({ error: 'failed' }));
+      }
+      return;
+    }
+
+    if (u.pathname.startsWith('/api/presentations/')) {
+      const name = path.basename(u.pathname.replace('/api/presentations/', '')).replace(/[^a-z0-9_\-]/ig, '');
+      const file = path.join(DATA_DIR, name + '.json');
+      if (req.method === 'GET') {
+        fs.readFile(file, 'utf8', (err, data) => {
+          if (err) {
+            res.writeHead(404, { 'content-type': 'application/json; charset=utf-8' });
+            res.end(JSON.stringify({ error: 'not found' }));
+            return;
+          }
+          res.writeHead(200, { 'content-type': 'application/json; charset=utf-8' });
+          res.end(data);
+        });
+        return;
+      }
+      if (req.method === 'POST') {
+        let body = '';
+        req.on('data', chunk => { body += chunk; });
+        req.on('end', () => {
+          try {
+            JSON.parse(body);
+            fs.writeFile(file, body, 'utf8', err => {
+              if (err) {
+                res.writeHead(500, { 'content-type': 'application/json; charset=utf-8' });
+                res.end(JSON.stringify({ error: 'write failed' }));
+                return;
+              }
+              res.writeHead(200, { 'content-type': 'application/json; charset=utf-8' });
+              res.end(JSON.stringify({ ok: true }));
+            });
+          } catch (_) {
+            res.writeHead(400, { 'content-type': 'application/json; charset=utf-8' });
+            res.end(JSON.stringify({ error: 'bad json' }));
+          }
+        });
+        return;
+      }
     }
 
     // ---- Static files
