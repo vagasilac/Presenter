@@ -50,6 +50,14 @@
 
   <!-- PRESENTATION TAB -->
   <div id="presentation" class="slide active">
+    <div class="row gap8 mb8" id="presToolbar">
+      <input id="presName" placeholder="Presentation name" class="w160" />
+      <button id="presNew" class="pill">New</button>
+      <button id="presAdd" class="pill">Add slide</button>
+      <button id="presSave" class="pill">Save</button>
+      <select id="presList" class="w160"></select>
+      <button id="presLoad" class="pill">Load</button>
+    </div>
     <div class="page-shell">
       <div class="pages-nav">
         <button id="prevPage" class="pill ghost">◀ Prev</button>
@@ -60,7 +68,7 @@
 
       <!-- PAGE 1: Craft vs Mass vs Lean -->
       <div class="page" data-page="cml">
-        <div class="content">
+        <div class="content" contenteditable="true">
           <div class="row justify-between items-end">
             <h2 class="m0">Craft vs Mass vs Lean</h2>
             <div class="row mini muted"><span class="chip">Topic</span><span class="chip">Interactive</span></div>

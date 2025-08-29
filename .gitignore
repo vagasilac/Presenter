@@ -46,3 +46,7 @@ coverage
 # Mac / Windows system files
 .DS_Store
 Thumbs.db
+
+# Presentations saved at runtime
+presentations/*.json
+
