@@ -536,7 +536,9 @@ $('#qaSend')?.addEventListener('click',()=>{ const txt = $('#qaInput').value.tri
 })();
 
 // ---------- Boot ----------
-(function(){ function boot(){ document.body.classList.remove('ink-on','wb-open');  syncSessionHints(); if(ROLE==='client'){ setTimeout(()=>{ const wsFilled=$('#wsUrl')?.value; if(wsFilled) connectWS(); }, 60); } }
+(function(){ function boot(){ document.body.classList.remove('ink-on','wb-open');  syncSessionHints();
+    setTimeout(()=>{ const wsFilled=$('#wsUrl')?.value; if(wsFilled) connectWS(); }, 60);
+  }
   if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', boot, { once:true }); } else { boot(); }
 })();
 
