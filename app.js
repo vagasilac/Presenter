@@ -201,7 +201,7 @@ function handle(msg){
     case 'answer': rtState.answers[msg.id]=msg.answer; renderResults(); break;
     case 'scores': rtState.scores=msg.scores||rtState.scores; renderLeader(); renderParticipants(); break;
     case 'reset': rtState.scores={}; renderLeader(); renderParticipants(); break;
-    case 'react': rtState.reactions[msg.emoji]=(rtState.reactions[msg.emoji]||0)+1; renderReactions(); send({t:'react_update', room:ROOM, reactions:rtState.reactions}); break;
+    case 'react': rtState.reactions[msg.emoji]=(rtState.reactions[msg.emoji]||0)+1; renderReactions(); showReactionBubble(msg.emoji); send({t:'react_update', room:ROOM, reactions:rtState.reactions}); break;
     case 'react_update': rtState.reactions = msg.reactions || rtState.reactions; renderReactions(); break;
     case 'roster': setRoster(msg.avatars || []); break;
     case 'avatar_conflict': toast('Avatar already taken — please pick another one.'); localStorage.removeItem('joined'); showJoinUI(); break;
@@ -221,7 +221,7 @@ function connectWS(){ const url=$('#wsUrl')?.value?.trim(); if(!url) return toas
       NAME = localStorage.getItem('name') || genCodeName(AVATAR);
       CLIENT_ID = localStorage.getItem('clientId') || CLIENT_ID;
       send({t:'announce',room:ROOM,id:CLIENT_ID,name:NAME,avatar:AVATAR});
-      hideJoinUI(); updateYouAre();
+      hideJoinUI();
     }
   };
   WS.onclose=()=>{$('#connState').textContent='disconnected'};
@@ -352,6 +352,17 @@ $('#resetScores')?.addEventListener('click',()=>{ rtState.scores={}; renderLeade
 // ---------- Reactions (host agg) ----------
 function renderReactions(){ const host = $('#resultsArea'); if(!host) return; const line = Object.entries(rtState.reactions).map(([k,v])=>`${k} ${v|0}`).join('  '); const id='rxline'; let el=$('#'+id); if(!el){ el=document.createElement('div'); el.id=id; el.className='mini'; host.prepend(el); } el.textContent = line ? ('Reactions: '+line) : ''; }
 
+function showReactionBubble(emoji){
+  if(ROLE!=='host') return;
+  const b=document.createElement('div');
+  b.className='reaction-bubble';
+  b.textContent=emoji;
+  const max=Math.max(0,window.innerWidth-40);
+  b.style.left=Math.floor(Math.random()*max)+'px';
+  document.body.appendChild(b);
+  setTimeout(()=>b.remove(),2000);
+}
+
 // ---------- Q&A (host) ----------
 function renderQA(){ const div = $('#qaList'); if(!div) return; const arr = Object.entries(rtState.qa).sort((a,b)=> (b[1].votes|0)-(a[1].votes|0)); div.innerHTML = arr.length ? arr.map(([qid,q])=>`<div class="row" style="gap:8px;margin:6px 0"><span>${q.avatar||'🙂'}</span><span>${q.text}</span><span class="chip">▲ ${q.votes|0}</span></div>`).join('') : 'No questions yet.'; }
 function handleQA(msg){ if(msg.t==='qa_new'){ const id = msg.qid || uid(); rtState.qa[id] = {text:msg.text, from:msg.name, avatar:msg.avatar, votes:0}; send({t:'qa_update', room:ROOM, qa:rtState.qa}); renderQA(); } if(msg.t==='qa_vote'){ const id = msg.qid; if(rtState.qa[id]) rtState.qa[id].votes=(rtState.qa[id].votes||0)+1; send({t:'qa_update', room:ROOM, qa:rtState.qa}); renderQA(); } if(msg.t==='qa_update'){ rtState.qa = msg.qa||rtState.qa; renderQA(); } }
@@ -387,7 +398,6 @@ function renderAvatars(){ const wrap = $('#avatarPick'); if(!wrap) return; wrap.
 renderAvatars();
 function showJoinUI(){
   $('#joinForm').style.display='flex';
-  $('#youAre').style.display='none';
   const ch=$('#clientHeader');
   if(ch){ ch.textContent='Join'; ch.style.display='block'; }
   $('#clientArea').style.display='none';
@@ -399,7 +409,6 @@ function showJoinUI(){
 }
 function hideJoinUI(){
   $('#joinForm').style.display='none';
-  $('#youAre').style.display='flex';
   const ch=$('#clientHeader');
   if(ch){ ch.style.display='none'; }
   $('#clientArea').style.display='block';
@@ -407,11 +416,6 @@ function hideJoinUI(){
   $('#qaForm').classList.add('hidden');
   $('#qaBtn')?.classList.remove('hidden');
   updateHeader();
-}
-function updateYouAre(){
-  const el=$('#youAre');
-  if(!el) return;
-  el.innerHTML=`You are: <span class="you-emoji">${AVATAR||'🙂'}</span> <span class="you-name">${NAME||''}</span>`;
 }
 function updateHeader(){
   const user=$('#headerClient');
@@ -432,10 +436,10 @@ function updateHeader(){
 }
 
 // Sticky join for clients
-(function(){ const wasJoined = localStorage.getItem('joined')==='1'; if (ROLE==='client' && wasJoined){ AVATAR = localStorage.getItem('avatar') || '🙂'; NAME = localStorage.getItem('name') || genCodeName(AVATAR); CLIENT_ID = localStorage.getItem('clientId') || CLIENT_ID; hideJoinUI(); updateYouAre(); }})();
+(function(){ const wasJoined = localStorage.getItem('joined')==='1'; if (ROLE==='client' && wasJoined){ AVATAR = localStorage.getItem('avatar') || '🙂'; NAME = localStorage.getItem('name') || genCodeName(AVATAR); CLIENT_ID = localStorage.getItem('clientId') || CLIENT_ID; hideJoinUI(); }})();
 
 // Join button
-$('#joinBtn')?.addEventListener('click', ()=>{ if(!AVATAR || USED_AVATARS.has(AVATAR)) { toast('Pick an available avatar'); return; } if(!NAME) NAME = genCodeName(AVATAR); localStorage.setItem('name', NAME); localStorage.setItem('clientId', CLIENT_ID); localStorage.setItem('avatar', AVATAR); localStorage.setItem('joined', '1'); send({t:'announce',room:ROOM,id:CLIENT_ID,name:NAME,avatar:AVATAR}); hideJoinUI(); updateYouAre(); toast(`Joined as ${AVATAR} ${NAME}`); });
+$('#joinBtn')?.addEventListener('click', ()=>{ if(!AVATAR || USED_AVATARS.has(AVATAR)) { toast('Pick an available avatar'); return; } if(!NAME) NAME = genCodeName(AVATAR); localStorage.setItem('name', NAME); localStorage.setItem('clientId', CLIENT_ID); localStorage.setItem('avatar', AVATAR); localStorage.setItem('joined', '1'); send({t:'announce',room:ROOM,id:CLIENT_ID,name:NAME,avatar:AVATAR}); hideJoinUI(); toast(`Joined as ${AVATAR} ${NAME}`); });
 
 // Reactions (client)
 (function(){ const EMO = ['👏','👍','🎉','🤯','😅']; const bar = $('#reactBar'); if(!bar) return; bar.innerHTML = EMO.map(e=>`<button class="pill ghost" data-emo="${e}" style="font-size:18px">${e}</button>`).join(''); bar.addEventListener('click',(ev)=>{ const b=ev.target.closest('button[data-emo]'); if(!b) return; send({t:'react', room:ROOM, id:CLIENT_ID, emoji:b.dataset.emo}); }); })();
