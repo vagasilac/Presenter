@@ -19,6 +19,9 @@ footer{padding:10px 0 18px}
 header{display:flex;align-items:center;gap:16px;padding:14px 18px;border-bottom:1px solid #1e2a39;background:linear-gradient(180deg,#0f1622,#0c111a)}
 header h1{font-size:18px;margin:0;letter-spacing:.3px}
 header .badge{font-size:12px;background:var(--chip);padding:4px 8px;border-radius:999px;color:var(--muted)}
+.header-user{display:flex;align-items:center;gap:8px;font-size:20px}
+.header-user .emoji{font-size:28px}
+.header-user .name{font-weight:600;font-size:20px}
 
 /* Layout */
 main{padding:18px;display:grid;gap:18px}
@@ -78,6 +81,8 @@ button:hover{opacity:.95}
 
 /* Chips & lists */
 .chip{background:var(--chip);border:1px solid #243349;border-radius:999px;padding:4px 8px;font-size:12px;color:#cfd9e3}
+.you-emoji{font-size:24px}
+.you-name{font-size:18px;font-weight:600}
 
 /* Table */
 .leader{width:100%;border-collapse:separate;border-spacing:0 8px}

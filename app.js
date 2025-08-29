@@ -385,9 +385,51 @@ function setRoster(list){ USED_AVATARS = new Set(list||[]); renderAvatars(); }
 function updatePreview(){ const el=$('#preview'); if(!el) return; if(!AVATAR){ el.innerHTML='<span class="muted">Pick an avatar</span>'; return; } if(!NAME) NAME = genCodeName(AVATAR); el.innerHTML=`<span class="emoji">${AVATAR}</span><span class="chip">${NAME}</span>`; }
 function renderAvatars(){ const wrap = $('#avatarPick'); if(!wrap) return; wrap.innerHTML = AVATARS.map(a=>{ const taken = USED_AVATARS.has(a); return `<button class="pill ghost" data-av="${a}" style="opacity:${taken?0.35:1}" ${taken?'disabled':''}>${a}</button>`; }).join(''); $$('#avatarPick button').forEach(b=>{ if(b.dataset.av===AVATAR) b.classList.add('active'); b.onclick=()=>{ if(b.disabled) return; AVATAR = b.dataset.av; NAME = genCodeName(AVATAR); localStorage.setItem('avatar', AVATAR); $$('#avatarPick button').forEach(x=>x.classList.remove('active')); b.classList.add('active'); updatePreview(); toast('Avatar selected'); }; }); updatePreview(); }
 renderAvatars();
-function showJoinUI(){ $('#joinForm').style.display='flex'; $('#youAre').style.display='none'; const ch=$('#clientHeader'); if(ch){ ch.textContent='Join'; ch.style.display='block'; } $('#clientArea').style.display='none'; $('#reactRow').style.display='none'; $('#qaForm').classList.add('hidden'); updatePreview(); }
-function hideJoinUI(){ $('#joinForm').style.display='none'; $('#youAre').style.display='flex'; const ch=$('#clientHeader'); if(ch){ ch.style.display='none'; } $('#clientArea').style.display='block'; $('#reactRow').style.display='flex'; $('#qaForm').classList.add('hidden'); }
-function updateYouAre(){ const el=$('#youAre'); if(!el) return; el.innerHTML=`You are: <span style="font-size:18px">${AVATAR||'🙂'}</span> <span class="chip">${NAME||''}</span>`; }
+function showJoinUI(){
+  $('#joinForm').style.display='flex';
+  $('#youAre').style.display='none';
+  const ch=$('#clientHeader');
+  if(ch){ ch.textContent='Join'; ch.style.display='block'; }
+  $('#clientArea').style.display='none';
+  $('#reactRow').style.display='none';
+  $('#qaForm').classList.add('hidden');
+  $('#qaBtn')?.classList.add('hidden');
+  updatePreview();
+  updateHeader();
+}
+function hideJoinUI(){
+  $('#joinForm').style.display='none';
+  $('#youAre').style.display='flex';
+  const ch=$('#clientHeader');
+  if(ch){ ch.style.display='none'; }
+  $('#clientArea').style.display='block';
+  $('#reactRow').style.display='flex';
+  $('#qaForm').classList.add('hidden');
+  $('#qaBtn')?.classList.remove('hidden');
+  updateHeader();
+}
+function updateYouAre(){
+  const el=$('#youAre');
+  if(!el) return;
+  el.innerHTML=`You are: <span class="you-emoji">${AVATAR||'🙂'}</span> <span class="you-name">${NAME||''}</span>`;
+}
+function updateHeader(){
+  const user=$('#headerClient');
+  const h1=$('#hostTitle');
+  const room=$('#roomBadge');
+  if(ROLE==='client' && localStorage.getItem('joined')==='1'){
+    if(user){
+      user.innerHTML=`<span class="emoji">${AVATAR||'🙂'}</span><span class="name">${NAME||''}</span><span class="chip mono">${ROOM}</span>`;
+      user.classList.remove('hidden');
+    }
+    if(h1) h1.style.display='none';
+    if(room) room.style.display='none';
+  } else {
+    if(user) user.classList.add('hidden');
+    if(h1) h1.style.display='';
+    if(room) room.style.display='';
+  }
+}
 
 // Sticky join for clients
 (function(){ const wasJoined = localStorage.getItem('joined')==='1'; if (ROLE==='client' && wasJoined){ AVATAR = localStorage.getItem('avatar') || '🙂'; NAME = localStorage.getItem('name') || genCodeName(AVATAR); CLIENT_ID = localStorage.getItem('clientId') || CLIENT_ID; hideJoinUI(); updateYouAre(); }})();
