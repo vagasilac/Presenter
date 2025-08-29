@@ -81,8 +81,6 @@ button:hover{opacity:.95}
 
 /* Chips & lists */
 .chip{background:var(--chip);border:1px solid #243349;border-radius:999px;padding:4px 8px;font-size:12px;color:#cfd9e3}
-.you-emoji{font-size:24px}
-.you-name{font-size:18px;font-weight:600}
 
 /* Table */
 .leader{width:100%;border-collapse:separate;border-spacing:0 8px}
@@ -92,6 +90,10 @@ button:hover{opacity:.95}
 
 /* Toast */
 .toast{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:#102030;border:1px solid #234;box-shadow:0 10px 30px rgba(0,0,0,.35);color:#cfe7ff;padding:10px 14px;border-radius:12px;display:none;z-index:2000}
+
+/* Reaction bubbles */
+.reaction-bubble{position:fixed;bottom:10px;font-size:32px;pointer-events:none;animation:react-bubble 2s ease-out forwards;z-index:1500}
+@keyframes react-bubble{from{transform:translateY(0) scale(1);opacity:.9}to{transform:translateY(-160px) scale(1.4);opacity:0}}
 
 /* Progress */
 .progress{height:8px;background:#142030;border:1px solid #223447;border-radius:999px;overflow:hidden}
