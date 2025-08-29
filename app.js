@@ -449,68 +449,6 @@ $('#joinBtn')?.addEventListener('click', ()=>{ if(!AVATAR || USED_AVATARS.has(AV
 $('#qaBtn')?.addEventListener('click',()=> $('#qaForm').classList.toggle('hidden'));
 $('#qaSend')?.addEventListener('click',()=>{ const txt = $('#qaInput').value.trim(); if(!txt) return; send({t:'qa_new', room:ROOM, id:CLIENT_ID, name:NAME, avatar:AVATAR, text:txt}); $('#qaInput').value=''; toast('Question sent'); });
 
-// ---------- Whiteboard (page cml) ----------
-(function(){ const page = document.querySelector('.page[data-page="cml"]'); if(!page) return; const canvas = page.querySelector('canvas.whiteboard'); const ctx = canvas.getContext('2d'); const panel = $('#wbPanel'); const fab = $('#wbFab'); const stateEl=$('#wbState'); const toolSeg=$('#toolSeg'); const colorInp=$('#wbColor'); const widthInp=$('#wbWidth'); const colorSwatch=$('#colorSwatch'); const swatchWrap=$('#wbSwatches'); const undoBtn=$('#wbUndo'); const redoBtn=$('#wbRedo'); const clearBtn=$('#wbClear'); const sizeDot=$('#sizeDot'); const wbInd=$('#wbIndicator');
-  let tool='pen'; let color=colorInp?colorInp.value:'#7cd992'; let width=Number(widthInp?widthInp.value:4); let drawing=false; let drawEnabled=false; let startX=0,startY=0; let lastX=0,lastY=0; let DPR=1, CSSW=0, CSSH=0; let currentSnap=null; let previewBase=null; const history=[]; const redoStack=[]; const maxHist=40; const LS_KEY = 'wb:cml:snap'; const LS_CFG='wb:cml:cfg';
-  // Scale drawing operations for crisp rendering on high-DPI screens
-  function resetTransform(){ ctx.setTransform(DPR,0,0,DPR,0,0) }
-  function snapshotCanvas(){ const oc=document.createElement('canvas'); oc.width=canvas.width; oc.height=canvas.height; oc.getContext('2d').drawImage(canvas,0,0); return oc }
-  function pushHistory(){ try{ history.push(snapshotCanvas()); if(history.length>maxHist) history.shift(); redoStack.length=0; syncButtons(); scheduleSave(); }catch(_){} }
-  function applySnap(snap){ resetTransform(); ctx.clearRect(0,0,CSSW,CSSH); if(snap) ctx.drawImage(snap,0,0,CSSW,CSSH); currentSnap=snap||null; scheduleSave(); }
-  function fit(){ const rect=page.getBoundingClientRect(); DPR=window.devicePixelRatio||1; CSSW=Math.max(10, Math.round(rect.width)); CSSH=Math.max(10, Math.round(rect.height)); canvas.width=Math.round(CSSW*DPR); canvas.height=Math.round(CSSH*DPR); canvas.style.width=CSSW+'px'; canvas.style.height=CSSH+'px'; resetTransform(); if(currentSnap){ applySnap(currentSnap); } else { const data=localStorage.getItem(LS_KEY); if(data){ const img=new Image(); img.onload=()=>{ resetTransform(); ctx.clearRect(0,0,CSSW,CSSH); ctx.drawImage(img,0,0,CSSW,CSSH); currentSnap=snapshotCanvas(); }; img.src=data; } const cfg=localStorage.getItem(LS_CFG); if(cfg){ try{ const c=JSON.parse(cfg); color=c.color||color; width=c.width||width; if(colorInp) colorInp.value=color; if(widthInp) widthInp.value=String(width); syncPreview(); }catch(_){} } } }
-  window.addEventListener('resize',()=>{ if(!currentSnap) currentSnap=snapshotCanvas(); fit(); }); setTimeout(fit,40);
-  function undo(){
-    if(!history.length) return;
-    const current = snapshotCanvas();
-    const snap = history.pop();
-    redoStack.push(current);
-    applySnap(snap);
-    syncButtons();
-  }
-  function redoAction(){
-    if(!redoStack.length) return;
-    const current = snapshotCanvas();
-    const snap = redoStack.pop();
-    history.push(current);
-    applySnap(snap);
-    syncButtons();
-  }
-  function clearAll(){ pushHistory(); resetTransform(); ctx.clearRect(0,0,CSSW,CSSH); currentSnap=snapshotCanvas(); scheduleSave(); }
-  function setDrawEnabled(on){
-  drawEnabled = on;
-  document.body.classList.toggle('ink-on', on);
-  document.body.classList.toggle('wb-open', on);
-  if(panel) panel.style.display = on ? 'block' : 'none';
-  if(fab) fab.classList.toggle('active', on);
-  if(wbInd) wbInd.classList.toggle('on', on);
-  page.classList.toggle('highlight-draw', on);
-  if(stateEl) stateEl.textContent = on ? 'on' : 'off';
-}
-  if(fab) fab.addEventListener('click',()=> setDrawEnabled(!drawEnabled));
-  function syncButtons(){ if(undoBtn) undoBtn.disabled = history.length===0; if(redoBtn) redoBtn.disabled = redoStack.length===0; }
-  function syncPreview(){ if(sizeDot){ sizeDot.style.width=sizeDot.style.height=Math.max(4,width)+'px'; sizeDot.style.background=color; } if(colorSwatch) colorSwatch.style.background=color; localStorage.setItem(LS_CFG, JSON.stringify({color,width})); }
-  if(colorInp) colorInp.addEventListener('input',()=>{ color=colorInp.value; syncPreview(); });
-  if(colorSwatch) colorSwatch.addEventListener('click',()=>{ colorInp && colorInp.click(); });
-  const presets=['#7cd992','#58c4dc','#ffb86b','#ff6b6b','#e6eef6','#ffd700','#a78bfa','#ffffff','#000000'];
-  if(swatchWrap) { swatchWrap.innerHTML = presets.map(c=>`<button class="swatch" data-col="${c}" title="${c}" style="background:${c};width:20px;height:20px;border-radius:50%;border:2px solid #274b6b"></button>`).join(''); swatchWrap.addEventListener('click',(e)=>{ const b=e.target.closest('.swatch'); if(!b) return; color=b.dataset.col; if(colorInp) colorInp.value=color; syncPreview(); }); }
-  if(widthInp) widthInp.addEventListener('input',()=>{ width=Number(widthInp.value); syncPreview(); });
-  syncPreview(); syncButtons();
-  if(undoBtn) undoBtn.addEventListener('click',undo);
-  if(redoBtn) redoBtn.addEventListener('click',redoAction);
-  if(clearBtn) clearBtn.addEventListener('click',()=>{ clearAll(); syncButtons(); });
-  function pos(evt){ const r=canvas.getBoundingClientRect(); const x=evt.clientX-r.left; const y=evt.clientY-r.top; return {x,y} }
-  function drawArrow(ctx, x1,y1, x2,y2){ const dx=x2-x1, dy=y2-y1; const len=Math.hypot(dx,dy)||1; const ang=Math.atan2(dy,dx); const DPR=(window.devicePixelRatio||1); const headLen = Math.min(len*0.35, Math.max(12*DPR, width*6)); const headWidth = Math.max(8*DPR, width*3); ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke(); const bx = x2 - headLen*Math.cos(ang); const by = y2 - headLen*Math.sin(ang); const px = Math.cos(ang + Math.PI/2), py = Math.sin(ang + Math.PI/2); const lx = bx + (headWidth/2)*px, ly = by + (headWidth/2)*py; const rx = bx - (headWidth/2)*px, ry = by - (headWidth/2)*py; ctx.beginPath(); ctx.moveTo(x2,y2); ctx.lineTo(lx,ly); ctx.lineTo(rx,ry); ctx.closePath(); ctx.fillStyle = ctx.strokeStyle; ctx.fill(); }
-  canvas.addEventListener('pointerdown',(e)=>{ if(!drawEnabled) return; canvas.setPointerCapture(e.pointerId); const {x,y}=pos(e); startX=lastX=x; startY=lastY=y; drawing=true; ctx.setTransform(window.devicePixelRatio||1,0,0,window.devicePixelRatio||1,0,0); ctx.lineCap='round'; ctx.lineJoin='round'; ctx.strokeStyle=color; ctx.lineWidth=width*(window.devicePixelRatio||1); ctx.globalCompositeOperation = (tool==='erase') ? 'destination-out' : 'source-over'; pushHistory(); if(tool==='pen' || tool==='erase'){ ctx.beginPath(); ctx.moveTo(x,y); } else { previewBase = snapshotCanvas(); }});
-  function drawShape(ctx,x,y){ ctx.lineWidth=width*(window.devicePixelRatio||1); ctx.strokeStyle=color; ctx.globalCompositeOperation='source-over'; if(tool==='line'){ ctx.beginPath(); ctx.moveTo(startX,startY); ctx.lineTo(x,y); ctx.stroke(); } else if(tool==='rect'){ const w=x-startX,h=y-startY; ctx.strokeRect(startX,startY,w,h); } else if(tool==='ellipse'){ const cx=(startX+x)/2, cy=(startY+y)/2; const rx=Math.abs(x-startX)/2, ry=Math.abs(y-startY)/2; ctx.beginPath(); ctx.ellipse(cx,cy,rx,ry,0,0,Math.PI*2); ctx.stroke(); } else if(tool==='arrow'){ drawArrow(ctx,startX,startY,x,y); } }
-  canvas.addEventListener('pointermove',(e)=>{ if(!drawing||!drawEnabled) return; const {x,y}=pos(e); ctx.setTransform(window.devicePixelRatio||1,0,0,window.devicePixelRatio||1,0,0); if(tool==='pen' || tool==='erase'){ ctx.lineTo(x,y); ctx.stroke(); lastX=x; lastY=y; } else { ctx.clearRect(0,0,CSSW,CSSH); if(previewBase) ctx.drawImage(previewBase,0,0,CSSW,CSSH); drawShape(ctx,x,y); }});
-  canvas.addEventListener('pointerup',(e)=>{ if(!drawing) return; const {x,y}=pos(e); ctx.setTransform(window.devicePixelRatio||1,0,0,window.devicePixelRatio||1,0,0); if(tool!=='pen' && tool!=='erase'){ ctx.clearRect(0,0,CSSW,CSSH); if(previewBase) ctx.drawImage(previewBase,0,0,CSSW,CSSH); drawShape(ctx,x,y); previewBase=null; } drawing=false; canvas.releasePointerCapture(e.pointerId); currentSnap=snapshotCanvas(); syncButtons(); scheduleSave(); });
-  canvas.addEventListener('pointerleave',()=>{ drawing=false; previewBase=null; });
-  let saveTimer=null; function scheduleSave(){ clearTimeout(saveTimer); saveTimer=setTimeout(()=>{ try{ const data=canvas.toDataURL('image/png'); localStorage.setItem(LS_KEY, data); }catch(_){} }, 150); }
-  if(toolSeg) toolSeg.addEventListener('click',(e)=>{ const b=e.target.closest('button[data-tool]'); if(!b) return; $$('#toolSeg button').forEach(x=>x.classList.remove('active')); b.classList.add('active'); tool=b.dataset.tool; });
-  // Ensure writing OFF initially
-  setDrawEnabled(false);
-})();
-
 // ---------- Builds (step-by-step) ----------
 // ---------- Presentation builder ----------
 (function(){
@@ -520,8 +458,11 @@ $('#qaSend')?.addEventListener('click',()=>{ const txt = $('#qaInput').value.tri
   const prevPage=$('#prevPage'), nextPage=$('#nextPage'), pageDots=$('#pageDots');
   const presName=$('#presName'), presNew=$('#presNew'), presAdd=$('#presAdd'), presSave=$('#presSave'), presList=$('#presList'), presLoad=$('#presLoad');
   const buildPrev=$('#buildPrev'), buildNext=$('#buildNext'), buildInfo=$('#buildInfo'), buildEdit=$('#buildEdit'), buildClear=$('#buildClear');
+  const fontSelect=$('#fontSelect'), fontSize=$('#fontSize'), fontColor=$('#fontColor'), imgBtn=$('#imgBtn'), imgInput=$('#imgInput');
+  const moveLeft=$('#moveLeft'), moveRight=$('#moveRight');
 
   let pages=[], builds=[], current=0;
+  try{ document.execCommand('styleWithCSS', true); }catch(_){ }
 
   function BuildState(page){
     const content=page.querySelector('.content');
@@ -538,13 +479,27 @@ $('#qaSend')?.addEventListener('click',()=>{ const txt = $('#qaInput').value.tri
     return { next, prev, clear, setEdit, apply, setStep, get currentStep(){return currentStep;}, get maxStep(){return maxStep;} };
   }
 
-  function refreshPages(){ pages=$$('#presentation .page-shell .page'); builds=pages.map(p=>BuildState(p)); updateDots(); showPage(0); }
+  function refreshPages(){
+    pages=$$('#presentation .page-shell .page');
+    builds=pages.map(p=>BuildState(p));
+    updateDots();
+    if(pages.length) showPage(0);
+  }
 
   function updateDots(){ if(!pageDots) return; pageDots.innerHTML=''; pages.forEach((_,i)=>{ const d=document.createElement('div'); d.className='dot'+(i===current?' active':''); d.addEventListener('click',()=>showPage(i)); pageDots.appendChild(d); }); }
 
   function showPage(idx){ if(idx<0||idx>=pages.length) return; pages.forEach((p,i)=>{ p.style.display = i===idx?'':'none'; }); current=idx; builds[current].apply(); updateDots(); }
 
   function createBlank(){ const page=document.createElement('div'); page.className='page'; const content=document.createElement('div'); content.className='content'; content.contentEditable='true'; content.innerHTML='<h2>Title</h2><p>Content</p>'; page.appendChild(content); shell.appendChild(page); refreshPages(); showPage(pages.length-1); }
+
+  function moveSlide(from,to){
+    if(to<0||to>=pages.length) return;
+    const page=pages[from];
+    const ref=pages[to];
+    if(from<to) ref.after(page); else ref.before(page);
+    refreshPages();
+    showPage(to);
+  }
 
   function gather(){ return { slides: pages.map(p=>({ html: p.querySelector('.content').innerHTML })) }; }
 
@@ -560,14 +515,31 @@ $('#qaSend')?.addEventListener('click',()=>{ const txt = $('#qaInput').value.tri
   if(presNew) presNew.addEventListener('click',()=>{ $$('#presentation .page-shell .page').forEach(p=>p.remove()); createBlank(); presName.value=''; });
   if(presSave) presSave.addEventListener('click',save);
   if(presLoad) presLoad.addEventListener('click',()=>{ const n=presList.value; if(n) load(n); });
+  if(moveLeft) moveLeft.addEventListener('click',()=>moveSlide(current, current-1));
+  if(moveRight) moveRight.addEventListener('click',()=>moveSlide(current, current+1));
   if(buildPrev) buildPrev.addEventListener('click',()=>builds[current]?.prev());
   if(buildNext) buildNext.addEventListener('click',()=>builds[current]?.next());
   if(buildEdit) buildEdit.addEventListener('change',e=>builds[current]?.setEdit(e.target.checked));
   if(buildClear) buildClear.addEventListener('click',()=>builds[current]?.clear());
+  if(fontSelect) fontSelect.addEventListener('change',()=>document.execCommand('fontName',false,fontSelect.value));
+  if(fontSize) fontSize.addEventListener('change',()=>document.execCommand('fontSize',false,fontSize.value));
+  if(fontColor) fontColor.addEventListener('input',()=>document.execCommand('foreColor',false,fontColor.value));
+  if(imgBtn && imgInput){
+    imgBtn.addEventListener('click',()=>imgInput.click());
+    imgInput.addEventListener('change',()=>{
+      const f=imgInput.files[0];
+      if(!f) return;
+      const reader=new FileReader();
+      reader.onload=e=>document.execCommand('insertImage',false,e.target.result);
+      reader.readAsDataURL(f);
+      imgInput.value='';
+    });
+  }
   window.addEventListener('keydown',e=>{ const t=e.target; if(t.tagName==='INPUT'||t.tagName==='TEXTAREA'||t.isContentEditable) return; if(e.key==='ArrowRight'||e.key===' '){ e.preventDefault(); builds[current]?.next(); } if(e.key==='ArrowLeft'){ e.preventDefault(); builds[current]?.prev(); } });
 
   loadList();
   refreshPages();
+  if(!pages.length) createBlank();
 })();
 
 // ---------- Boot ----------
