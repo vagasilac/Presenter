@@ -163,6 +163,7 @@ body.ink-on canvas.whiteboard{pointer-events:auto; cursor:crosshair}
 .session-grid{display:grid;grid-template-columns:1fr;gap:12px}
 .session-warn{margin-top:8px;background:#332a12;border-color:#6b5a2a;color:#ffd18b}
 .session-note{margin:8px 0 0}
+#participantList .chip{font-size:20px;padding:8px 12px}
 
 /* Always-on mini QR (resizable) */
 .mini-qr{
