@@ -530,7 +530,13 @@ $('#qaSend')?.addEventListener('click',()=>{ const txt = $('#qaInput').value.tri
       const f=imgInput.files[0];
       if(!f) return;
       const reader=new FileReader();
-      reader.onload=e=>document.execCommand('insertImage',false,e.target.result);
+      reader.onload=e=>{
+        const content=pages[current]?.querySelector('.content');
+        if(content){
+          content.focus();
+          document.execCommand('insertImage',false,e.target.result);
+        }
+      };
       reader.readAsDataURL(f);
       imgInput.value='';
     });
