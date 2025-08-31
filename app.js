@@ -465,6 +465,7 @@ $('#qaSend')?.addEventListener('click',()=>{ const txt = $('#qaInput').value.tri
 
   let pages=[], builds=[], current=0;
   let selectedImg=null;
+  let resizeHandle=null, rotateHandle=null;
   let wbColor='#7cd992', wbSizeVal=4, drawing=false;
   try{ document.execCommand('styleWithCSS', true); }catch(_){ }
 
@@ -484,6 +485,39 @@ $('#qaSend')?.addEventListener('click',()=>{ const txt = $('#qaInput').value.tri
     resizeCanvas(c,page);
   }
 
+  function ensureHandles(page){
+    if(!resizeHandle){
+      resizeHandle=document.createElement('div');
+      resizeHandle.className='img-handle img-resize';
+      resizeHandle.addEventListener('pointerdown',resizeStart);
+    }
+    if(!rotateHandle){
+      rotateHandle=document.createElement('div');
+      rotateHandle.className='img-handle img-rotate';
+      rotateHandle.addEventListener('pointerdown',rotateStart);
+    }
+    page.appendChild(resizeHandle);
+    page.appendChild(rotateHandle);
+  }
+  function positionHandles(){
+    if(!selectedImg||!resizeHandle||!rotateHandle) return;
+    const rect=selectedImg.getBoundingClientRect();
+    const prect=selectedImg.parentElement.getBoundingClientRect();
+    const left=rect.left-prect.left;
+    const top=rect.top-prect.top;
+    const w=rect.width;
+    const h=rect.height;
+    const sz=12;
+    resizeHandle.style.display=rotateHandle.style.display='block';
+    resizeHandle.style.left=(left+w-sz/2)+'px';
+    resizeHandle.style.top=(top+h-sz/2)+'px';
+    rotateHandle.style.left=(left+w/2-sz/2)+'px';
+    rotateHandle.style.top=(top-sz*2)+'px';
+  }
+  function hideHandles(){
+    if(resizeHandle) resizeHandle.style.display='none';
+    if(rotateHandle) rotateHandle.style.display='none';
+  }
   function makeDraggable(img){
     img.classList.add('draggable');
     img.style.position='absolute';
@@ -499,7 +533,7 @@ $('#qaSend')?.addEventListener('click',()=>{ const txt = $('#qaInput').value.tri
     selectImg(img);
     const startX=ev.clientX,startY=ev.clientY;
     const initX=parseFloat(img.style.left)||0, initY=parseFloat(img.style.top)||0;
-    function onMove(e){ img.style.left=(initX+e.clientX-startX)+'px'; img.style.top=(initY+e.clientY-startY)+'px'; }
+    function onMove(e){ img.style.left=(initX+e.clientX-startX)+'px'; img.style.top=(initY+e.clientY-startY)+'px'; positionHandles(); }
     function onUp(){ window.removeEventListener('pointermove',onMove); window.removeEventListener('pointerup',onUp); }
     window.addEventListener('pointermove',onMove);
     window.addEventListener('pointerup',onUp);
@@ -508,9 +542,45 @@ $('#qaSend')?.addEventListener('click',()=>{ const txt = $('#qaInput').value.tri
     if(selectedImg) selectedImg.classList.remove('selected');
     selectedImg=img;
     img.classList.add('selected');
+    ensureHandles(img.parentElement);
+    positionHandles();
     if(layerSelect){ layerSelect.disabled=false; layerSelect.value=img.dataset.layer||'4'; }
   }
-  document.addEventListener('click',e=>{ if(!e.target.closest('img.draggable')){ if(selectedImg){selectedImg.classList.remove('selected'); selectedImg=null; if(layerSelect) layerSelect.disabled=true;} } });
+  function resizeStart(ev){
+    ev.preventDefault(); ev.stopPropagation();
+    const rect=selectedImg.getBoundingClientRect();
+    const startW=rect.width,startH=rect.height;
+    const startX=ev.clientX,startY=ev.clientY;
+    function onMove(e){
+      const newW=Math.max(20,startW+(e.clientX-startX));
+      const newH=Math.max(20,startH+(e.clientY-startY));
+      selectedImg.style.width=newW+'px';
+      selectedImg.style.height=newH+'px';
+      positionHandles();
+    }
+    function onUp(){ window.removeEventListener('pointermove',onMove); window.removeEventListener('pointerup',onUp); }
+    window.addEventListener('pointermove',onMove);
+    window.addEventListener('pointerup',onUp);
+  }
+  function rotateStart(ev){
+    ev.preventDefault(); ev.stopPropagation();
+    const rect=selectedImg.getBoundingClientRect();
+    const cx=rect.left+rect.width/2;
+    const cy=rect.top+rect.height/2;
+    const startAng=Math.atan2(ev.clientY-cy, ev.clientX-cx);
+    const base=parseFloat(selectedImg.dataset.rotate||'0');
+    function onMove(e){
+      const ang=Math.atan2(e.clientY-cy, e.clientX-cx);
+      const rot=base+(ang-startAng);
+      selectedImg.style.transform=`rotate(${rot}rad)`;
+      selectedImg.dataset.rotate=rot;
+      positionHandles();
+    }
+    function onUp(){ window.removeEventListener('pointermove',onMove); window.removeEventListener('pointerup',onUp); }
+    window.addEventListener('pointermove',onMove);
+    window.addEventListener('pointerup',onUp);
+  }
+  document.addEventListener('click',e=>{ if(!e.target.closest('img.draggable') && !e.target.closest('.img-handle') && !e.target.closest('#imgLayer')){ if(selectedImg){selectedImg.classList.remove('selected'); selectedImg=null; hideHandles(); if(layerSelect) layerSelect.disabled=true;} } });
 
   function BuildState(page){
     const content=page.querySelector('.content');
