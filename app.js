@@ -551,9 +551,19 @@ $('#qaSend')?.addEventListener('click',()=>{ const txt = $('#qaInput').value.tri
     const rect=selectedImg.getBoundingClientRect();
     const startW=rect.width,startH=rect.height;
     const startX=ev.clientX,startY=ev.clientY;
+    const ratio=startW/startH;
     function onMove(e){
-      const newW=Math.max(20,startW+(e.clientX-startX));
-      const newH=Math.max(20,startH+(e.clientY-startY));
+      const dx=e.clientX-startX;
+      const dy=e.clientY-startY;
+      let newW=startW+dx;
+      let newH=startH+dy;
+      if(Math.abs(dx)>Math.abs(dy)){
+        newW=Math.max(20,newW);
+        newH=newW/ratio;
+      }else{
+        newH=Math.max(20,newH);
+        newW=newH*ratio;
+      }
       selectedImg.style.width=newW+'px';
       selectedImg.style.height=newH+'px';
       positionHandles();
@@ -620,11 +630,19 @@ $('#qaSend')?.addEventListener('click',()=>{ const txt = $('#qaInput').value.tri
     showPage(to);
   }
 
-  function gather(){ return { slides: pages.map(p=>({ html: p.querySelector('.content').innerHTML })) }; }
+  function gather(){
+    return { slides: pages.map(p=>{
+      const clone=p.cloneNode(true);
+      clone.querySelectorAll('canvas.whiteboard').forEach(c=>c.remove());
+      clone.querySelectorAll('.img-handle').forEach(h=>h.remove());
+      clone.querySelectorAll('img.selected').forEach(i=>i.classList.remove('selected'));
+      return { html: clone.innerHTML };
+    }) };
+  }
 
   async function save(){ const name=(presName?.value||'').trim(); if(!name){ toast('Name required'); return; } try{ await fetch('/api/presentations/'+encodeURIComponent(name), { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify(gather()) }); loadList(); toast('Saved'); }catch(_){ toast('Save failed'); } }
 
-  async function load(name){ try{ const res=await fetch('/api/presentations/'+encodeURIComponent(name)); if(!res.ok) return; const data=await res.json(); $$('#presentation .page-shell .page').forEach(p=>p.remove()); (data.slides||[]).forEach(s=>{ const page=document.createElement('div'); page.className='page'; const content=document.createElement('div'); content.className='content'; content.contentEditable='true'; content.innerHTML=s.html||''; page.appendChild(content); ensureWBCanvas(page); shell.appendChild(page); }); refreshPages(); showPage(0); presName.value=name; }catch(_){ toast('Load failed'); } }
+  async function load(name){ try{ const res=await fetch('/api/presentations/'+encodeURIComponent(name)); if(!res.ok) return; const data=await res.json(); $$('#presentation .page-shell .page').forEach(p=>p.remove()); (data.slides||[]).forEach(s=>{ const page=document.createElement('div'); page.className='page'; page.innerHTML=s.html||''; const content=page.querySelector('.content'); if(content) content.contentEditable='true'; page.querySelectorAll('img.draggable').forEach(makeDraggable); ensureWBCanvas(page); shell.appendChild(page); }); refreshPages(); showPage(0); presName.value=name; }catch(_){ toast('Load failed'); } }
 
   async function loadList(){ try{ const res=await fetch('/api/presentations'); if(!res.ok) return; const arr=await res.json(); if(presList){ presList.innerHTML='<option value="">(choose)</option>'+arr.map(n=>`<option value="${n}">${n}</option>`).join(''); } }catch(_){ /* noop */ } }
 
