@@ -492,7 +492,7 @@ $('#qaSend')?.addEventListener('click',()=>{ const txt = $('#qaInput').value.tri
   const fontSelect=$('#fontSelect'), fontSize=$('#fontSize'), fontColor=$('#fontColor'), imgBtn=$('#imgBtn'), imgInput=$('#imgInput');
   const moveLeft=$('#moveLeft'), moveRight=$('#moveRight');
   const layerSelect=$('#imgLayer');
-  const wbFab=$('#wbFab'), wbColorInput=$('#wbColor'), wbColorSwatch=$('#wbColorSwatch'), wbSizeSeg=$('#wbSize'), wbClear=$('#wbClear'), wbIndicator=$('#wbIndicator'), wbToolSeg=$('#wbTool'), wbUndo=$('#wbUndo'), wbRedo=$('#wbRedo');
+  const wbFab=$('#wbFab'), wbColorInput=$('#wbColor'), wbColorSwatch=$('#wbColorSwatch'), wbColorSeg=$('#wbColors'), wbSizeSeg=$('#wbSize'), wbClear=$('#wbClear'), wbIndicator=$('#wbIndicator'), wbToolSeg=$('#wbTool'), wbUndo=$('#wbUndo'), wbRedo=$('#wbRedo');
 
   let pages=[], builds=[], current=0;
   let selectedImg=null;
@@ -778,8 +778,12 @@ $('#qaSend')?.addEventListener('click',()=>{ const txt = $('#qaInput').value.tri
   if(wbFab){
     wbFab.addEventListener('click',()=>{ const on=document.body.classList.toggle('ink-on'); document.body.classList.toggle('wb-open'); wbFab.classList.toggle('active',on); wbIndicator?.classList.toggle('on',on); });
   }
+  if(wbColorSeg){
+    wbColorSeg.addEventListener('click',e=>{ const b=e.target.closest('button[data-color]'); if(!b) return; wbColor=b.dataset.color; wbColorInput.value=wbColor; wbColorSeg.querySelectorAll('button').forEach(x=>x.classList.remove('active')); b.classList.add('active'); });
+  }
   if(wbColorSwatch && wbColorInput){
-    function setWbColor(){ wbColor=wbColorInput.value; wbColorSwatch.style.background=wbColor; }
+    wbColorSwatch.addEventListener('click',()=>wbColorInput.click());
+    function setWbColor(){ wbColor=wbColorInput.value; wbColorSwatch.style.background=wbColor; wbColorSeg?.querySelectorAll('button').forEach(x=>x.classList.remove('active')); wbColorSwatch.classList.add('active'); }
     wbColorInput.addEventListener('input', setWbColor);
     wbColorInput.addEventListener('change', setWbColor);
   }

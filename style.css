@@ -122,7 +122,7 @@ pre{white-space:pre-wrap;word-wrap:break-word}
 .dot.active{background:#54b6cf}
 .page{position:relative;background:#0c121a;border:1px solid #1b2635;border-radius:18px;min-height:520px;padding:12px;overflow:hidden}
 .page .content{position:relative;z-index:1}
-.page canvas.whiteboard{position:absolute;inset:0;z-index:2; pointer-events:none;}
+.page canvas.whiteboard{position:absolute;inset:0;z-index:6; pointer-events:none;}
 /* Drawing cursor and pointer activation only when ON */
 body.ink-on canvas.whiteboard{pointer-events:auto; cursor:crosshair}
 .page img.draggable{position:absolute;top:10px;left:10px;max-width:100%;cursor:move;}
@@ -139,7 +139,8 @@ body.ink-on canvas.whiteboard{pointer-events:auto; cursor:crosshair}
 .wb-open .wb-panel{display:block}
 .wb-panel .row{gap:8px}
 .wb-panel label{font-size:12px;color:#b9c7d6}
-.color-swatch{width:28px;height:28px;border-radius:999px;border:2px solid #274b6b;box-shadow:0 2px 8px rgba(0,0,0,.4);cursor:pointer;display:inline-block}
+.color-swatch{width:28px;height:28px;border-radius:999px;border:2px solid #274b6b;box-shadow:0 2px 8px rgba(0,0,0,.4);cursor:pointer;display:inline-block;padding:0}
+.color-swatch.active{border-color:#fff}
 .color-hidden{position:absolute;left:-9999px;opacity:0;width:0;height:0}
 .swatch{width:20px;height:20px;border-radius:999px;border:2px solid #274b6b;cursor:pointer}
 .swatchwrap{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
