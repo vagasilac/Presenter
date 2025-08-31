@@ -566,6 +566,7 @@ $('#qaSend')?.addEventListener('click',()=>{ const txt = $('#qaInput').value.tri
         if(curr){ page._wb.strokes.push(curr); page._wb.redo=[]; }
         curr=null;
         ctx.globalAlpha=1; ctx.globalCompositeOperation='source-over';
+        redrawWB(page);
       }
       c.addEventListener('pointerup',end);
       c.addEventListener('pointerleave',end);
@@ -778,8 +779,9 @@ $('#qaSend')?.addEventListener('click',()=>{ const txt = $('#qaInput').value.tri
     wbFab.addEventListener('click',()=>{ const on=document.body.classList.toggle('ink-on'); document.body.classList.toggle('wb-open'); wbFab.classList.toggle('active',on); wbIndicator?.classList.toggle('on',on); });
   }
   if(wbColorSwatch && wbColorInput){
-    wbColorSwatch.addEventListener('click',()=>wbColorInput.click());
-    wbColorInput.addEventListener('input',()=>{ wbColor=wbColorInput.value; wbColorSwatch.style.background=wbColor; });
+    function setWbColor(){ wbColor=wbColorInput.value; wbColorSwatch.style.background=wbColor; }
+    wbColorInput.addEventListener('input', setWbColor);
+    wbColorInput.addEventListener('change', setWbColor);
   }
   if(wbSizeSeg){
     wbSizeSeg.addEventListener('click',e=>{ const b=e.target.closest('button[data-size]'); if(!b) return; wbSizeVal=Number(b.dataset.size); wbSizeSeg.querySelectorAll('button').forEach(x=>x.classList.remove('active')); b.classList.add('active'); });

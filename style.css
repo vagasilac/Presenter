@@ -139,7 +139,7 @@ body.ink-on canvas.whiteboard{pointer-events:auto; cursor:crosshair}
 .wb-open .wb-panel{display:block}
 .wb-panel .row{gap:8px}
 .wb-panel label{font-size:12px;color:#b9c7d6}
-.color-swatch{width:28px;height:28px;border-radius:999px;border:2px solid #274b6b;box-shadow:0 2px 8px rgba(0,0,0,.4);cursor:pointer}
+.color-swatch{width:28px;height:28px;border-radius:999px;border:2px solid #274b6b;box-shadow:0 2px 8px rgba(0,0,0,.4);cursor:pointer;display:inline-block}
 .color-hidden{position:absolute;left:-9999px;opacity:0;width:0;height:0}
 .swatch{width:20px;height:20px;border-radius:999px;border:2px solid #274b6b;cursor:pointer}
 .swatchwrap{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
