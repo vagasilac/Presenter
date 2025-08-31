@@ -206,6 +206,14 @@
     <input type="color" id="wbColor" value="#7cd992" class="color-hidden" />
   </div>
   <div class="row mt8">
+    <label>Tool</label>
+    <div class="seg" id="wbTool">
+      <button data-tool="pen" class="active">✏️</button>
+      <button data-tool="highlighter">🖍️</button>
+      <button data-tool="eraser">🩹</button>
+    </div>
+  </div>
+  <div class="row mt8">
     <label>Size</label>
     <div class="seg" id="wbSize">
       <button data-size="2"><span class="size-dot" style="width:4px;height:4px"></span></button>
@@ -214,6 +222,8 @@
     </div>
   </div>
   <div class="row mt8">
+    <button id="wbUndo" class="pill">Undo</button>
+    <button id="wbRedo" class="pill">Redo</button>
     <button id="wbClear" class="pill">Clear</button>
   </div>
 </div>
