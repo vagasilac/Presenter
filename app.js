@@ -148,6 +148,13 @@ function syncSessionHints(){
   renderMiniQR();
 })();
 
+function hideFileMenu(){
+  const tb = document.getElementById('fileToolbar');
+  if (tb) tb.classList.add('hidden');
+  document.querySelector('.tab[data-tab="file"]')?.classList.remove('active');
+  document.querySelector('.tab[data-tab="presentation"]')?.classList.add('active');
+}
+
 // ---------- Tabs ----------
 (function(){
   function showTab(tabEl){
@@ -674,7 +681,6 @@ $('#qaSend')?.addEventListener('click',()=>{ const txt = $('#qaInput').value.tri
   if(nextPage) nextPage.addEventListener('click',()=>showPage(current+1));
   if(presAdd) presAdd.addEventListener('click',createBlank);
   if(presNew) presNew.addEventListener('click',()=>{ $$('#presentation .page-shell .page').forEach(p=>p.remove()); createBlank(); presName.value=''; });
-  function hideFileMenu(){ $('#fileToolbar')?.classList.add('hidden'); document.querySelector('.tab[data-tab="file"]')?.classList.remove('active'); document.querySelector('.tab[data-tab="presentation"]')?.classList.add('active'); }
   if(presSave) presSave.addEventListener('click',()=>{ save(); hideFileMenu(); });
   if(presLoad) presLoad.addEventListener('click',()=>{ const n=presList.value; if(n) load(n); hideFileMenu(); });
   if(moveLeft) moveLeft.addEventListener('click',()=>moveSlide(current, current-1));
