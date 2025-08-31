@@ -202,7 +202,14 @@
 <div id="wbPanel" class="wb-panel">
   <div class="row">
     <label>Color</label>
-    <label id="wbColorSwatch" for="wbColor" class="color-swatch" style="background:#7cd992"></label>
+    <div id="wbColors" class="row gap6">
+      <button class="color-swatch active" data-color="#7cd992" style="background:#7cd992"></button>
+      <button class="color-swatch" data-color="#58c4dc" style="background:#58c4dc"></button>
+      <button class="color-swatch" data-color="#ffb86b" style="background:#ffb86b"></button>
+      <button class="color-swatch" data-color="#f25f5c" style="background:#f25f5c"></button>
+      <button class="color-swatch" data-color="#000000" style="background:#000000"></button>
+      <button id="wbColorSwatch" class="color-swatch" title="Custom color" style="background:#7cd992"></button>
+    </div>
     <input type="color" id="wbColor" value="#7cd992" class="color-hidden" />
   </div>
   <div class="row mt8">
