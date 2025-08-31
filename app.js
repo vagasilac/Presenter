@@ -155,10 +155,31 @@ function syncSessionHints(){
     $$('.slide').forEach(s=>s.classList.remove('active'));
     if (tabEl){ tabEl.classList.add('active'); const target=$('#'+tabEl.dataset.tab); if(target) target.classList.add('active'); }
   }
+  function hideFileMenu(){
+    $('#fileToolbar')?.classList.add('hidden');
+    document.querySelector('.tab[data-tab="file"]')?.classList.remove('active');
+  }
   // Delegate clicks so it's robust
   document.addEventListener('click', (ev)=>{
     const t = ev.target.closest('.tab');
-    if(!t) return; ev.preventDefault(); showTab(t);
+    if(!t) return; ev.preventDefault();
+    if(t.dataset.tab==='file'){
+      const tb=$('#fileToolbar');
+      if(!tb) return;
+      if(tb.classList.contains('hidden')){
+        $$('.tab').forEach(x=>x.classList.remove('active'));
+        $$('.slide').forEach(s=>s.classList.remove('active'));
+        $('#presentation')?.classList.add('active');
+        tb.classList.remove('hidden');
+        t.classList.add('active');
+      } else {
+        hideFileMenu();
+        document.querySelector('.tab[data-tab="presentation"]')?.classList.add('active');
+      }
+      return;
+    }
+    hideFileMenu();
+    showTab(t);
   });
   // Ensure Presentation is active on load by default
   const active = document.querySelector('.tab.active');
@@ -650,8 +671,9 @@ $('#qaSend')?.addEventListener('click',()=>{ const txt = $('#qaInput').value.tri
   if(nextPage) nextPage.addEventListener('click',()=>showPage(current+1));
   if(presAdd) presAdd.addEventListener('click',createBlank);
   if(presNew) presNew.addEventListener('click',()=>{ $$('#presentation .page-shell .page').forEach(p=>p.remove()); createBlank(); presName.value=''; });
-  if(presSave) presSave.addEventListener('click',save);
-  if(presLoad) presLoad.addEventListener('click',()=>{ const n=presList.value; if(n) load(n); });
+  function hideFileMenu(){ $('#fileToolbar')?.classList.add('hidden'); document.querySelector('.tab[data-tab="file"]')?.classList.remove('active'); document.querySelector('.tab[data-tab="presentation"]')?.classList.add('active'); }
+  if(presSave) presSave.addEventListener('click',()=>{ save(); hideFileMenu(); });
+  if(presLoad) presLoad.addEventListener('click',()=>{ const n=presList.value; if(n) load(n); hideFileMenu(); });
   if(moveLeft) moveLeft.addEventListener('click',()=>moveSlide(current, current-1));
   if(moveRight) moveRight.addEventListener('click',()=>moveSlide(current, current+1));
   if(buildPrev) buildPrev.addEventListener('click',()=>builds[current]?.prev());
