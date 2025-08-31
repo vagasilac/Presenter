@@ -39,7 +39,7 @@ main{padding:18px;display:grid;gap:18px}
 .muted{color:var(--muted)}
 .mini{font-size:12px}
 .center{display:grid;place-items:center}
-.hidden{display:none}
+.hidden{display:none!important}
 .mono{font-family:ui-monospace,Menlo,Consolas,monospace}
 .mt8{margin-top:8px}
 .mt12{margin-top:12px}
