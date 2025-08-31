@@ -7,24 +7,33 @@
   <title>Lean Training — Presenter (v7.2 resizable mini‑QR)</title>
   <link rel="stylesheet" href="./style.css" />
 </head>
-<body>
+  <body>
 <div class="wrap">
   <header>
-    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 17c5-1 11-1 16 0" stroke="#7cd992" stroke-width="1.6" stroke-linecap="round"/><path d="M4 13c3-1 13-1 16 0" stroke="#58c4dc" stroke-width="1.6" stroke-linecap="round"/><path d="M4 9c2-1 7-1 10 0" stroke="#ffb86b" stroke-width="1.6" stroke-linecap="round"/><circle cx="6" cy="9" r="1.8" fill="#ffb86b"/><circle cx="12" cy="13" r="1.8" fill="#58c4dc"/><circle cx="18" cy="17" r="1.8" fill="#7cd992"/></svg>
-    <h1 id="hostTitle">Lean Training — Live Session</h1>
-    <div id="roomBadge" class="row mini muted">Room: <span id="roomId" class="chip mono">auto</span></div>
-    <div id="headerClient" class="right header-user hidden"></div>
+    <div class="header-main">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 17c5-1 11-1 16 0" stroke="#7cd992" stroke-width="1.6" stroke-linecap="round"/><path d="M4 13c3-1 13-1 16 0" stroke="#58c4dc" stroke-width="1.6" stroke-linecap="round"/><path d="M4 9c2-1 7-1 10 0" stroke="#ffb86b" stroke-width="1.6" stroke-linecap="round"/><circle cx="6" cy="9" r="1.8" fill="#ffb86b"/><circle cx="12" cy="13" r="1.8" fill="#58c4dc"/><circle cx="18" cy="17" r="1.8" fill="#7cd992"/></svg>
+      <h1 id="hostTitle">Lean Training — Live Session</h1>
+      <div id="roomBadge" class="row mini muted">Room: <span id="roomId" class="chip mono">auto</span></div>
+      <div id="headerClient" class="right header-user hidden"></div>
+    </div>
+    <div class="tabs" role="tablist">
+      <div class="tab" data-tab="file">File</div>
+      <div class="tab" data-tab="session">Session</div>
+      <div class="tab active" data-tab="presentation">Presentation</div>
+      <div class="tab" data-tab="polls">Polls</div>
+      <div class="tab" data-tab="leader">Leaderboard</div>
+    </div>
+    <div class="row gap8 hidden file-menu" id="fileToolbar">
+      <input id="presName" placeholder="Presentation name" class="w160" />
+      <button id="presNew" class="pill">New</button>
+      <button id="presSave" class="pill">Save</button>
+      <select id="presList" class="w160"></select>
+      <button id="presLoad" class="pill">Load</button>
+    </div>
   </header>
 
   <main>
     <section id="slidesCard" class="card">
-      <div class="tabs" role="tablist">
-        <div class="tab" data-tab="file">File</div>
-        <div class="tab" data-tab="session">Session</div>
-        <div class="tab active" data-tab="presentation">Presentation</div>
-        <div class="tab" data-tab="polls">Polls</div>
-        <div class="tab" data-tab="leader">Leaderboard</div>
-      </div>
 
     <!-- SESSION TAB -->
   <div id="session" class="slide">
@@ -51,13 +60,6 @@
 
   <!-- PRESENTATION TAB -->
   <div id="presentation" class="slide active">
-    <div class="row gap8 mb8 hidden" id="fileToolbar">
-      <input id="presName" placeholder="Presentation name" class="w160" />
-      <button id="presNew" class="pill">New</button>
-      <button id="presSave" class="pill">Save</button>
-      <select id="presList" class="w160"></select>
-      <button id="presLoad" class="pill">Load</button>
-    </div>
     <div class="page-shell">
       <div class="row gap8 mb8" id="textToolbar">
         <select id="fontSelect">
