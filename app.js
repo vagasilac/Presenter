@@ -492,15 +492,45 @@ $('#qaSend')?.addEventListener('click',()=>{ const txt = $('#qaInput').value.tri
   const fontSelect=$('#fontSelect'), fontSize=$('#fontSize'), fontColor=$('#fontColor'), imgBtn=$('#imgBtn'), imgInput=$('#imgInput');
   const moveLeft=$('#moveLeft'), moveRight=$('#moveRight');
   const layerSelect=$('#imgLayer');
-  const wbFab=$('#wbFab'), wbColorInput=$('#wbColor'), wbColorSwatch=$('#wbColorSwatch'), wbSizeSeg=$('#wbSize'), wbClear=$('#wbClear'), wbIndicator=$('#wbIndicator');
+  const wbFab=$('#wbFab'), wbColorInput=$('#wbColor'), wbColorSwatch=$('#wbColorSwatch'), wbSizeSeg=$('#wbSize'), wbClear=$('#wbClear'), wbIndicator=$('#wbIndicator'), wbToolSeg=$('#wbTool'), wbUndo=$('#wbUndo'), wbRedo=$('#wbRedo');
 
   let pages=[], builds=[], current=0;
   let selectedImg=null;
   let resizeHandle=null, rotateHandle=null;
-  let wbColor='#7cd992', wbSizeVal=4, drawing=false;
+  let wbColor='#7cd992', wbSizeVal=4, drawing=false, wbTool='pen';
   try{ document.execCommand('styleWithCSS', true); }catch(_){ }
 
-  function resizeCanvas(c,page){ c.width=page.clientWidth; c.height=page.clientHeight; }
+  function redrawWB(page){
+    const wb = page._wb;
+    if(!wb) return;
+    const ctx = wb.ctx;
+    ctx.clearRect(0,0,ctx.canvas.width, ctx.canvas.height);
+    wb.strokes.forEach(s=>{
+      ctx.save();
+      if(s.mode==='eraser'){
+        ctx.globalCompositeOperation='destination-out';
+        ctx.globalAlpha=1;
+      }else{
+        ctx.globalCompositeOperation='source-over';
+        ctx.globalAlpha=s.mode==='highlighter'?0.3:1;
+        ctx.strokeStyle=s.color;
+      }
+      ctx.lineWidth=s.mode==='highlighter'?s.size*2:s.size;
+      ctx.lineCap='round';
+      ctx.beginPath();
+      s.points.forEach((pt,i)=>{ i?ctx.lineTo(pt.x,pt.y):ctx.moveTo(pt.x,pt.y); });
+      ctx.stroke();
+      ctx.restore();
+    });
+  }
+
+  function resizeCanvas(c,page){
+    c.width=page.clientWidth; c.height=page.clientHeight;
+    const ctx=c.getContext('2d');
+    if(!page._wb) page._wb={ ctx, strokes:[], redo:[] };
+    else page._wb.ctx=ctx;
+    redrawWB(page);
+  }
   function ensureWBCanvas(page){
     let c=page.querySelector('canvas.whiteboard');
     if(!c){
@@ -508,10 +538,39 @@ $('#qaSend')?.addEventListener('click',()=>{ const txt = $('#qaInput').value.tri
       c.className='whiteboard';
       page.appendChild(c);
       const ctx=c.getContext('2d');
-      c.addEventListener('pointerdown',e=>{ if(!document.body.classList.contains('ink-on')) return; drawing=true; ctx.strokeStyle=wbColor; ctx.lineWidth=wbSizeVal; ctx.lineCap='round'; ctx.beginPath(); ctx.moveTo(e.offsetX,e.offsetY); });
-      c.addEventListener('pointermove',e=>{ if(!drawing) return; ctx.lineTo(e.offsetX,e.offsetY); ctx.stroke(); });
-      c.addEventListener('pointerup',()=>{ drawing=false; });
-      c.addEventListener('pointerleave',()=>{ drawing=false; });
+      page._wb={ ctx, strokes:[], redo:[] };
+      let curr=null;
+      c.addEventListener('pointerdown',e=>{
+        if(!document.body.classList.contains('ink-on')) return;
+        drawing=true;
+        const wb=page._wb;
+        curr={ mode:wbTool, color:wbColor, size:wbSizeVal, points:[{x:e.offsetX,y:e.offsetY}] };
+        if(wbTool==='eraser'){
+          ctx.globalCompositeOperation='destination-out'; ctx.globalAlpha=1;
+        }else{
+          ctx.globalCompositeOperation='source-over'; ctx.globalAlpha=wbTool==='highlighter'?0.3:1; ctx.strokeStyle=wbColor;
+        }
+        ctx.lineWidth=wbTool==='highlighter'?wbSizeVal*2:wbSizeVal;
+        ctx.lineCap='round';
+        ctx.beginPath(); ctx.moveTo(e.offsetX,e.offsetY);
+      });
+      c.addEventListener('pointermove',e=>{
+        if(!drawing || !curr) return;
+        const pt={x:e.offsetX,y:e.offsetY};
+        curr.points.push(pt);
+        ctx.lineTo(pt.x,pt.y); ctx.stroke();
+      });
+      function end(){
+        if(!drawing) return;
+        drawing=false;
+        if(curr){ page._wb.strokes.push(curr); page._wb.redo=[]; }
+        curr=null;
+        ctx.globalAlpha=1; ctx.globalCompositeOperation='source-over';
+      }
+      c.addEventListener('pointerup',end);
+      c.addEventListener('pointerleave',end);
+    } else if(!page._wb){
+      page._wb={ ctx:c.getContext('2d'), strokes:[], redo:[] };
     }
     resizeCanvas(c,page);
   }
@@ -667,13 +726,13 @@ $('#qaSend')?.addEventListener('click',()=>{ const txt = $('#qaInput').value.tri
       clone.querySelectorAll('canvas.whiteboard').forEach(c=>c.remove());
       clone.querySelectorAll('.img-handle').forEach(h=>h.remove());
       clone.querySelectorAll('img.selected').forEach(i=>i.classList.remove('selected'));
-      return { html: clone.innerHTML };
+      return { html: clone.innerHTML, wb: p._wb ? p._wb.strokes : [] };
     }) };
   }
 
   async function save(){ const name=(presName?.value||'').trim(); if(!name){ toast('Name required'); return; } try{ await fetch('/api/presentations/'+encodeURIComponent(name), { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify(gather()) }); loadList(); toast('Saved'); }catch(_){ toast('Save failed'); } }
 
-  async function load(name){ try{ const res=await fetch('/api/presentations/'+encodeURIComponent(name)); if(!res.ok) return; const data=await res.json(); $$('#presentation .page-shell .page').forEach(p=>p.remove()); (data.slides||[]).forEach(s=>{ const page=document.createElement('div'); page.className='page'; page.innerHTML=s.html||''; const content=page.querySelector('.content'); if(content) content.contentEditable='true'; page.querySelectorAll('img.draggable').forEach(makeDraggable); ensureWBCanvas(page); shell.appendChild(page); }); refreshPages(); showPage(0); presName.value=name; }catch(_){ toast('Load failed'); } }
+  async function load(name){ try{ const res=await fetch('/api/presentations/'+encodeURIComponent(name)); if(!res.ok) return; const data=await res.json(); $$('#presentation .page-shell .page').forEach(p=>p.remove()); (data.slides||[]).forEach(s=>{ const page=document.createElement('div'); page.className='page'; page.innerHTML=s.html||''; const content=page.querySelector('.content'); if(content) content.contentEditable='true'; page.querySelectorAll('img.draggable').forEach(makeDraggable); ensureWBCanvas(page); shell.appendChild(page); if(page._wb){ page._wb.strokes = s.wb || []; page._wb.redo = []; redrawWB(page); } }); refreshPages(); showPage(0); presName.value=name; }catch(_){ toast('Load failed'); } }
 
   async function loadList(){ try{ const res=await fetch('/api/presentations'); if(!res.ok) return; const arr=await res.json(); if(presList){ presList.innerHTML='<option value="">(choose)</option>'+arr.map(n=>`<option value="${n}">${n}</option>`).join(''); } }catch(_){ /* noop */ } }
 
@@ -725,8 +784,17 @@ $('#qaSend')?.addEventListener('click',()=>{ const txt = $('#qaInput').value.tri
   if(wbSizeSeg){
     wbSizeSeg.addEventListener('click',e=>{ const b=e.target.closest('button[data-size]'); if(!b) return; wbSizeVal=Number(b.dataset.size); wbSizeSeg.querySelectorAll('button').forEach(x=>x.classList.remove('active')); b.classList.add('active'); });
   }
+  if(wbToolSeg){
+    wbToolSeg.addEventListener('click',e=>{ const b=e.target.closest('button[data-tool]'); if(!b) return; wbTool=b.dataset.tool; wbToolSeg.querySelectorAll('button').forEach(x=>x.classList.remove('active')); b.classList.add('active'); });
+  }
+  if(wbUndo){
+    wbUndo.addEventListener('click',()=>{ const wb=pages[current]?._wb; if(wb && wb.strokes.length){ wb.redo.push(wb.strokes.pop()); redrawWB(pages[current]); }});
+  }
+  if(wbRedo){
+    wbRedo.addEventListener('click',()=>{ const wb=pages[current]?._wb; if(wb && wb.redo.length){ wb.strokes.push(wb.redo.pop()); redrawWB(pages[current]); }});
+  }
   if(wbClear){
-    wbClear.addEventListener('click',()=>{ const c=pages[current]?.querySelector('canvas.whiteboard'); if(c){ const ctx=c.getContext('2d'); ctx.clearRect(0,0,c.width,c.height); }});
+    wbClear.addEventListener('click',()=>{ const wb=pages[current]?._wb; if(wb){ wb.strokes=[]; wb.redo=[]; wb.ctx.clearRect(0,0,wb.ctx.canvas.width, wb.ctx.canvas.height); }});
   }
   window.addEventListener('resize',()=>{ pages.forEach(p=>{ const c=p.querySelector('canvas.whiteboard'); if(c) resizeCanvas(c,p); }); });
   window.addEventListener('keydown',e=>{ const t=e.target; if(t.tagName==='INPUT'||t.tagName==='TEXTAREA'||t.isContentEditable) return; if(e.key==='ArrowRight'||e.key===' '){ e.preventDefault(); builds[current]?.next(); } if(e.key==='ArrowLeft'){ e.preventDefault(); builds[current]?.prev(); } });
