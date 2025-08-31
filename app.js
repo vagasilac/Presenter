@@ -170,6 +170,8 @@ function syncSessionHints(){
         $$('.tab').forEach(x=>x.classList.remove('active'));
         $$('.slide').forEach(s=>s.classList.remove('active'));
         $('#presentation')?.classList.add('active');
+        tb.style.left = t.offsetLeft + 'px';
+        tb.style.top = (t.offsetTop + t.offsetHeight) + 'px';
         tb.classList.remove('hidden');
         t.classList.add('active');
       } else {
