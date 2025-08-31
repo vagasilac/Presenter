@@ -19,6 +19,7 @@
   <main>
     <section id="slidesCard" class="card">
       <div class="tabs" role="tablist">
+        <div class="tab" data-tab="file">File</div>
         <div class="tab" data-tab="session">Session</div>
         <div class="tab active" data-tab="presentation">Presentation</div>
         <div class="tab" data-tab="polls">Polls</div>
@@ -48,24 +49,23 @@
     </section>
   </div>
 
-  <!-- PRESENTATION TAB -->
-  <div id="presentation" class="slide active">
-    <div class="row gap8 mb8" id="presToolbar">
+  <!-- FILE TAB -->
+  <div id="file" class="slide">
+    <div class="row gap8 mb8" id="fileToolbar">
       <input id="presName" placeholder="Presentation name" class="w160" />
       <button id="presNew" class="pill">New</button>
-      <button id="presAdd" class="pill">Add slide</button>
       <button id="presSave" class="pill">Save</button>
       <select id="presList" class="w160"></select>
       <button id="presLoad" class="pill">Load</button>
     </div>
+  </div>
+
+  <!-- PRESENTATION TAB -->
+  <div id="presentation" class="slide active">
+    <div class="row gap8 mb8" id="presToolbar">
+      <button id="presAdd" class="pill">Add slide</button>
+    </div>
     <div class="page-shell">
-      <div class="pages-nav">
-        <button id="prevPage" class="pill ghost">◀ Prev</button>
-        <div class="dots" id="pageDots"></div>
-        <button id="nextPage" class="pill ghost">Next ▶</button>
-        <button id="moveLeft" class="pill ghost">Move ◀</button>
-        <button id="moveRight" class="pill ghost">Move ▶</button>
-      </div>
       <div class="row gap8 mb8" id="textToolbar">
         <select id="fontSelect">
           <option value="Arial">Arial</option>
@@ -190,7 +190,14 @@
       <span class="chip">Pages + Whiteboard</span>
       <span class="chip">Single-port server</span>
     </div>
-  </footer>
+</footer>
+</div>
+<div class="pages-nav" id="navControls">
+  <button id="prevPage" class="pill ghost">◀ Prev</button>
+  <div class="dots" id="pageDots"></div>
+  <button id="nextPage" class="pill ghost">Next ▶</button>
+  <button id="moveLeft" class="pill ghost">Move ◀</button>
+  <button id="moveRight" class="pill ghost">Move ▶</button>
 </div>
 <div id="toast" class="toast"></div>
 <div id="wbIndicator" class="wb-ind">Writing: ON</div>

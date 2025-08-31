@@ -113,7 +113,8 @@ pre{white-space:pre-wrap;word-wrap:break-word}
 
 /* Pages & whiteboard */
 .page-shell{position:relative}
-.pages-nav{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.pages-nav{display:flex;align-items:center;gap:8px;position:fixed;bottom:18px;left:18px;opacity:.2;z-index:1000}
+.pages-nav:hover{opacity:1}
 .dots{display:flex;gap:6px}
 .dot{width:8px;height:8px;border-radius:999px;background:#23354d;border:1px solid #2b415f}
 .dot.active{background:#54b6cf}
