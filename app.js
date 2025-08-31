@@ -155,37 +155,38 @@ function syncSessionHints(){
     $$('.slide').forEach(s=>s.classList.remove('active'));
     if (tabEl){ tabEl.classList.add('active'); const target=$('#'+tabEl.dataset.tab); if(target) target.classList.add('active'); }
   }
-  function hideFileMenu(){
-    $('#fileToolbar')?.classList.add('hidden');
-    document.querySelector('.tab[data-tab="file"]')?.classList.remove('active');
-  }
   // Delegate clicks so it's robust
   document.addEventListener('click', (ev)=>{
     const t = ev.target.closest('.tab');
-    if(!t) return; ev.preventDefault();
-    if(t.dataset.tab==='file'){
-      const tb=$('#fileToolbar');
-      if(!tb) return;
-      if(tb.classList.contains('hidden')){
-        $$('.tab').forEach(x=>x.classList.remove('active'));
-        $$('.slide').forEach(s=>s.classList.remove('active'));
-        $('#presentation')?.classList.add('active');
-        tb.style.left = t.offsetLeft + 'px';
-        tb.style.top = (t.offsetTop + t.offsetHeight) + 'px';
-        tb.classList.remove('hidden');
-        t.classList.add('active');
-      } else {
-        hideFileMenu();
-        document.querySelector('.tab[data-tab="presentation"]')?.classList.add('active');
+    if(t){
+      ev.preventDefault();
+      if(t.dataset.tab==='file'){
+        const tb=$('#fileToolbar');
+        if(!tb) return;
+        if(tb.classList.contains('hidden')){
+          $$('.tab').forEach(x=>x.classList.remove('active'));
+          $$('.slide').forEach(s=>s.classList.remove('active'));
+          $('#presentation')?.classList.add('active');
+          tb.style.left = t.offsetLeft + 'px';
+          tb.style.top = (t.offsetTop + t.offsetHeight) + 'px';
+          tb.classList.remove('hidden');
+          t.classList.add('active');
+        } else {
+          hideFileMenu();
+          document.querySelector('.tab[data-tab="presentation"]')?.classList.add('active');
+        }
+        return;
       }
-      return;
+      hideFileMenu();
+      showTab(t);
+    } else if(!ev.target.closest('#fileToolbar')) {
+      hideFileMenu();
     }
-    hideFileMenu();
-    showTab(t);
   });
   // Ensure Presentation is active on load by default
   const active = document.querySelector('.tab.active');
   if(!active){ const first = document.querySelector('.tab[data-tab="presentation"]') || document.querySelector('.tab'); if(first) showTab(first); }
+  hideFileMenu();
 })();
 
 // ---------- Charts (sparklines) ----------
