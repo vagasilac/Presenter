@@ -521,10 +521,10 @@ $('#qaSend')?.addEventListener('click',()=>{ const txt = $('#qaInput').value.tri
   function makeDraggable(img){
     img.classList.add('draggable');
     img.style.position='absolute';
-    img.style.left='10px';
-    img.style.top='10px';
-    img.dataset.layer=layerSelect?.value||'4';
-    img.style.zIndex=String((layerSelect?.value?Number(layerSelect.value)-1:3));
+    if(!img.style.left) img.style.left='10px';
+    if(!img.style.top) img.style.top='10px';
+    if(!img.dataset.layer) img.dataset.layer=layerSelect?.value||'4';
+    img.style.zIndex=String(Number(img.dataset.layer||'4')-1);
     img.draggable=false;
     img.addEventListener('pointerdown',imgDragStart);
   }
