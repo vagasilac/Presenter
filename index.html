@@ -81,6 +81,13 @@
         <input type="color" id="fontColor" />
         <button id="imgBtn" class="pill">Insert Image</button>
         <input type="file" id="imgInput" accept="image/*" class="hidden" />
+        <select id="imgLayer" disabled>
+          <option value="1">Layer 1</option>
+          <option value="2">Layer 2</option>
+          <option value="3">Layer 3</option>
+          <option value="4" selected>Layer 4</option>
+          <option value="5">Layer 5</option>
+        </select>
       </div>
     </div>
   </div>
@@ -187,6 +194,26 @@
 </div>
 <div id="toast" class="toast"></div>
 <div id="wbIndicator" class="wb-ind">Writing: ON</div>
+
+<div id="wbFab" class="fab">✏️</div>
+<div id="wbPanel" class="wb-panel">
+  <div class="row">
+    <label>Color</label>
+    <div id="wbColorSwatch" class="color-swatch" style="background:#7cd992"></div>
+    <input type="color" id="wbColor" value="#7cd992" class="color-hidden" />
+  </div>
+  <div class="row mt8">
+    <label>Size</label>
+    <div class="seg" id="wbSize">
+      <button data-size="2"><span class="size-dot" style="width:4px;height:4px"></span></button>
+      <button data-size="4" class="active"><span class="size-dot" style="width:8px;height:8px"></span></button>
+      <button data-size="8"><span class="size-dot" style="width:12px;height:12px"></span></button>
+    </div>
+  </div>
+  <div class="row mt8">
+    <button id="wbClear" class="pill">Clear</button>
+  </div>
+</div>
 
 <!-- Always-on mini QR (resizable) -->
 
