@@ -129,9 +129,12 @@ body.ink-on canvas.whiteboard{pointer-events:auto; cursor:crosshair}
 .page img.draggable{max-width:100%;}
 .page .draggable.selected{outline:2px solid #2aa6ff}
 .page .textbox{min-width:60px;min-height:24px;padding:4px;background:rgba(255,255,255,.8);}
-.page .img-handle{position:absolute;width:12px;height:12px;background:#2aa6ff;border:2px solid #fff;border-radius:2px;z-index:5;display:none}
-.page .img-resize{cursor:nwse-resize}
-.page .img-rotate{border-radius:999px;cursor:grab}
+  .page .img-handle{position:absolute;width:12px;height:12px;background:#2aa6ff;border:2px solid #fff;border-radius:2px;z-index:5;display:none}
+  .page .img-resize{cursor:nwse-resize}
+  .page .img-rotate{border-radius:999px;cursor:grab}
+  .page .htmlbox{background:#fff;}
+  .page .htmlbox iframe{width:100%;height:100%;border:0;display:block;}
+  .page .htmlbox .html-handle{position:absolute;top:0;left:0;width:14px;height:14px;background:#2aa6ff;border:2px solid #fff;border-radius:2px;cursor:move;z-index:5;}
 
 /* FAB + toolbar */
 .fab{position:fixed;right:18px;bottom:18px;z-index:1000;background:#0f2a42;border:1px solid #1e3954;border-radius:999px;padding:12px;cursor:pointer;box-shadow:0 12px 28px rgba(0,0,0,.5);backdrop-filter:blur(6px);transition:transform .1s ease, background .2s ease}

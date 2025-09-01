@@ -13,6 +13,8 @@ const PORT = Number(process.argv[2] || process.env.PORT || 8080);
 const PUBLIC_DIR = __dirname;
 const DATA_DIR = path.join(PUBLIC_DIR, 'presentations');
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
+const IMPORT_DIR = path.join(PUBLIC_DIR, 'imports');
+if (!fs.existsSync(IMPORT_DIR)) fs.mkdirSync(IMPORT_DIR, { recursive: true });
 
 const MIME = {
   '.html':'text/html; charset=utf-8', '.css':'text/css; charset=utf-8',
@@ -90,6 +92,19 @@ const server = http.createServer(async (req, res) => {
   <div class="mono">${text.replace(/</g,'&lt;')}</div>
 </div>`;
       res.writeHead(200, {'content-type':'text/html; charset=utf-8'}); res.end(page); return;
+    }
+
+    // ---- List available HTML imports ----
+    if (u.pathname === '/api/imports' && req.method === 'GET') {
+      try {
+        const files = fs.readdirSync(IMPORT_DIR).filter(f => f.toLowerCase().endsWith('.html'));
+        res.writeHead(200, { 'content-type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify(files));
+      } catch (e) {
+        res.writeHead(500, { 'content-type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({ error: 'failed' }));
+      }
+      return;
     }
 
     // ---- Presentation storage API ----

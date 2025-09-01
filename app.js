@@ -489,7 +489,7 @@ $('#qaSend')?.addEventListener('click',()=>{ const txt = $('#qaInput').value.tri
   const prevPage=$('#prevPage'), nextPage=$('#nextPage'), pageDots=$('#pageDots');
   const presName=$('#presName'), presNew=$('#presNew'), presAdd=$('#presAdd'), presDup=$('#presDup'), presSave=$('#presSave'), presList=$('#presList'), presLoad=$('#presLoad');
   const buildPrev=$('#buildPrev'), buildNext=$('#buildNext'), buildInfo=$('#buildInfo'), buildEdit=$('#buildEdit'), buildClear=$('#buildClear');
-  const fontSelect=$('#fontSelect'), fontSize=$('#fontSize'), fontColor=$('#fontColor'), fontColorSwatch=$('#fontColorSwatch'), textBg=$('#textBg'), textBgSwatch=$('#textBgSwatch'), textBgTransparent=$('#textBgTransparent'), imgBtn=$('#imgBtn'), textBtn=$('#textBtn'), imgInput=$('#imgInput'), deleteBtn=$('#deleteBtn');
+  const fontSelect=$('#fontSelect'), fontSize=$('#fontSize'), fontColor=$('#fontColor'), fontColorSwatch=$('#fontColorSwatch'), textBg=$('#textBg'), textBgSwatch=$('#textBgSwatch'), textBgTransparent=$('#textBgTransparent'), imgBtn=$('#imgBtn'), textBtn=$('#textBtn'), htmlBtn=$('#htmlBtn'), htmlSelect=$('#htmlSelect'), imgInput=$('#imgInput'), deleteBtn=$('#deleteBtn');
   const moveLeft=$('#moveLeft'), moveRight=$('#moveRight');
   const layerSelect=$('#imgLayer');
   const wbFab=$('#wbFab'), wbColorInput=$('#wbColor'), wbColorSwatch=$('#wbColorSwatch'), wbColorSeg=$('#wbColors'), wbSizeSeg=$('#wbSize'), wbClear=$('#wbClear'), wbIndicator=$('#wbIndicator'), wbToolSeg=$('#wbTool'), wbUndo=$('#wbUndo'), wbRedo=$('#wbRedo');
@@ -631,7 +631,7 @@ $('#qaSend')?.addEventListener('click',()=>{ const txt = $('#qaInput').value.tri
     if(resizeHandle) resizeHandle.style.display='none';
     if(rotateHandle) rotateHandle.style.display='none';
   }
-  function makeDraggable(el){
+  function makeDraggable(el, handle){
     el.classList.add('draggable');
     el.style.position='absolute';
     if(!el.style.left) el.style.left='10px';
@@ -639,10 +639,9 @@ $('#qaSend')?.addEventListener('click',()=>{ const txt = $('#qaInput').value.tri
     if(!el.dataset.layer) el.dataset.layer=layerSelect?.value||'4';
     el.style.zIndex=String(Number(el.dataset.layer||'4')-1);
     el.draggable=false;
-    el.addEventListener('pointerdown',dragStart);
+    (handle||el).addEventListener('pointerdown',e=>dragStart(e,el));
   }
-  function dragStart(ev){
-    const el=ev.target;
+  function dragStart(ev, el){
     selectEl(el);
     const startX=ev.clientX,startY=ev.clientY;
     const initX=parseFloat(el.style.left)||0, initY=parseFloat(el.style.top)||0;
@@ -796,6 +795,8 @@ $('#qaSend')?.addEventListener('click',()=>{ const txt = $('#qaInput').value.tri
 
   async function loadList(){ try{ const res=await fetch('/api/presentations'); if(!res.ok) return; const arr=await res.json(); if(presList){ presList.innerHTML='<option value="">(choose)</option>'+arr.map(n=>`<option value="${n}">${n}</option>`).join(''); } }catch(_){ /* noop */ } }
 
+  async function loadImports(){ try{ const res=await fetch('/api/imports'); if(!res.ok) return; const arr=await res.json(); if(htmlSelect){ htmlSelect.innerHTML='<option value="">(choose)</option>'+arr.map(f=>`<option value="${f}">${f}</option>`).join(''); } }catch(_){ /* noop */ } }
+
   if(prevPage) prevPage.addEventListener('click',()=>showPage(current-1));
   if(nextPage) nextPage.addEventListener('click',()=>showPage(current+1));
   if(presAdd) presAdd.addEventListener('click',createBlank);
@@ -849,6 +850,34 @@ $('#qaSend')?.addEventListener('click',()=>{ const txt = $('#qaInput').value.tri
       imgInput.value='';
     });
   }
+  if(htmlBtn && htmlSelect){
+    htmlBtn.addEventListener('click',()=>{
+      const file=htmlSelect.value;
+      if(!file) return;
+      const page=pages[current];
+      if(page){
+        const wrap=document.createElement('div');
+        wrap.className='htmlbox';
+        wrap.style.width='640px';
+        wrap.style.height='360px';
+        const iframe=document.createElement('iframe');
+        iframe.src='/imports/'+file;
+        iframe.style.width='100%';
+        iframe.style.height='100%';
+        iframe.style.border='0';
+        iframe.style.pointerEvents='none';
+        wrap.appendChild(iframe);
+        const handle=document.createElement('div');
+        handle.className='html-handle';
+        handle.title='Drag — double-click to toggle interaction';
+        handle.addEventListener('dblclick',()=>{ iframe.style.pointerEvents=iframe.style.pointerEvents==='none'?'auto':'none'; });
+        wrap.appendChild(handle);
+        makeDraggable(wrap, handle);
+        page.appendChild(wrap);
+        selectEl(wrap);
+      }
+    });
+  }
   if(deleteBtn){
     deleteBtn.addEventListener('click',()=>{
       if(selectedEl){
@@ -891,6 +920,7 @@ $('#qaSend')?.addEventListener('click',()=>{ const txt = $('#qaInput').value.tri
   window.addEventListener('keydown',e=>{ const t=e.target; if(t.tagName==='INPUT'||t.tagName==='TEXTAREA'||t.isContentEditable) return; if(e.key==='ArrowRight'||e.key===' '){ e.preventDefault(); builds[current]?.next(); } if(e.key==='ArrowLeft'){ e.preventDefault(); builds[current]?.prev(); } });
 
   loadList();
+  loadImports();
   refreshPages();
   if(!pages.length) createBlank();
 })();

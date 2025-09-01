@@ -35,13 +35,25 @@ test('redirects short join URL', async () => {
   assert.strictEqual(res.headers.get('location'), '/?room=testroom&role=client');
 });
 
-test('QR endpoint returns SVG', async () => {
-  const res = await fetch(`http://localhost:${PORT}/qr.svg?text=hello`);
-  assert.strictEqual(res.status, 200);
-  assert.strictEqual(res.headers.get('content-type'), 'image/svg+xml; charset=utf-8');
-  const body = await res.text();
-  assert.ok(body.includes('<svg'));
-});
+  test('QR endpoint returns SVG', async () => {
+    const res = await fetch(`http://localhost:${PORT}/qr.svg?text=hello`);
+    assert.strictEqual(res.status, 200);
+    assert.strictEqual(res.headers.get('content-type'), 'image/svg+xml; charset=utf-8');
+    const body = await res.text();
+    assert.ok(body.includes('<svg'));
+  });
+
+  test('lists html imports', async () => {
+    const dir = path.join(__dirname, '..', 'imports');
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    const file = path.join(dir, 'demo.html');
+    fs.writeFileSync(file, '<!doctype html><title>demo</title>');
+    const res = await fetch(`http://localhost:${PORT}/api/imports`);
+    assert.strictEqual(res.status, 200);
+    const list = await res.json();
+    assert.ok(list.includes('demo.html'));
+    fs.unlinkSync(file);
+  });
 
 test('presentation save and load', async () => {
   const data = { slides: [{ html: '<h2>Hi</h2>' }] };
