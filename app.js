@@ -489,7 +489,7 @@ $('#qaSend')?.addEventListener('click',()=>{ const txt = $('#qaInput').value.tri
   const prevPage=$('#prevPage'), nextPage=$('#nextPage'), pageDots=$('#pageDots');
   const presName=$('#presName'), presNew=$('#presNew'), presAdd=$('#presAdd'), presDup=$('#presDup'), presSave=$('#presSave'), presList=$('#presList'), presLoad=$('#presLoad');
   const buildPrev=$('#buildPrev'), buildNext=$('#buildNext'), buildInfo=$('#buildInfo'), buildEdit=$('#buildEdit'), buildClear=$('#buildClear');
-  const fontSelect=$('#fontSelect'), fontSize=$('#fontSize'), fontColor=$('#fontColor'), imgBtn=$('#imgBtn'), textBtn=$('#textBtn'), imgInput=$('#imgInput');
+  const fontSelect=$('#fontSelect'), fontSize=$('#fontSize'), fontColor=$('#fontColor'), textBg=$('#textBg'), imgBtn=$('#imgBtn'), textBtn=$('#textBtn'), imgInput=$('#imgInput'), deleteBtn=$('#deleteBtn');
   const moveLeft=$('#moveLeft'), moveRight=$('#moveRight');
   const layerSelect=$('#imgLayer');
   const wbFab=$('#wbFab'), wbColorInput=$('#wbColor'), wbColorSwatch=$('#wbColorSwatch'), wbColorSeg=$('#wbColors'), wbSizeSeg=$('#wbSize'), wbClear=$('#wbClear'), wbIndicator=$('#wbIndicator'), wbToolSeg=$('#wbTool'), wbUndo=$('#wbUndo'), wbRedo=$('#wbRedo');
@@ -499,6 +499,8 @@ $('#qaSend')?.addEventListener('click',()=>{ const txt = $('#qaInput').value.tri
   let resizeHandle=null, rotateHandle=null;
   let wbColor='#7cd992', wbSizeVal=4, drawing=false, wbTool='pen';
   try{ document.execCommand('styleWithCSS', true); }catch(_){ }
+
+  function rgbToHex(rgb){ const m=rgb.match(/\d+/g); return m ? '#'+m.slice(0,3).map(x=>Number(x).toString(16).padStart(2,'0')).join('') : '#ffffff'; }
 
   function redrawWB(page){
     const wb = page._wb;
@@ -636,6 +638,15 @@ $('#qaSend')?.addEventListener('click',()=>{ const txt = $('#qaInput').value.tri
     ensureHandles(el.parentElement);
     positionHandles();
     if(layerSelect){ layerSelect.disabled=false; layerSelect.value=el.dataset.layer||'4'; }
+    if(deleteBtn) deleteBtn.disabled=false;
+    if(textBg){
+      if(el.classList.contains('textbox')){
+        textBg.disabled=false;
+        textBg.value=rgbToHex(getComputedStyle(el).backgroundColor);
+      }else{
+        textBg.disabled=true;
+      }
+    }
   }
   function resizeStart(ev){
     ev.preventDefault(); ev.stopPropagation();
@@ -681,7 +692,8 @@ $('#qaSend')?.addEventListener('click',()=>{ const txt = $('#qaInput').value.tri
     window.addEventListener('pointermove',onMove);
     window.addEventListener('pointerup',onUp);
   }
-  document.addEventListener('click',e=>{ if(!e.target.closest('.draggable') && !e.target.closest('.img-handle') && !e.target.closest('#imgLayer')){ if(selectedEl){selectedEl.classList.remove('selected'); selectedEl=null; hideHandles(); if(layerSelect) layerSelect.disabled=true;} } });
+  document.addEventListener('click',e=>{ if(!e.target.closest('.draggable') && !e.target.closest('.img-handle') && !e.target.closest('#imgLayer')){ if(selectedEl){selectedEl.classList.remove('selected'); selectedEl=null; hideHandles(); if(layerSelect) layerSelect.disabled=true; if(textBg) textBg.disabled=true; if(deleteBtn) deleteBtn.disabled=true;} } });
+  document.addEventListener('keydown',e=>{ if(selectedEl && (e.key==='Delete' || e.key==='Backspace') && !e.target.isContentEditable){ e.preventDefault(); selectedEl.remove(); selectedEl=null; hideHandles(); if(layerSelect) layerSelect.disabled=true; if(textBg) textBg.disabled=true; if(deleteBtn) deleteBtn.disabled=true; } });
 
   function BuildState(page){
     const content=page.querySelector('.content');
@@ -710,7 +722,7 @@ $('#qaSend')?.addEventListener('click',()=>{ const txt = $('#qaInput').value.tri
 
   function showPage(idx){ if(idx<0||idx>=pages.length) return; pages.forEach((p,i)=>{ p.style.display = i===idx?'':'none'; if(i===idx){ const c=p.querySelector('canvas.whiteboard'); if(c) resizeCanvas(c,p); } }); current=idx; builds[current].apply(); updateDots(); }
 
-  function createBlank(){ const page=document.createElement('div'); page.className='page'; const content=document.createElement('div'); content.className='content'; content.contentEditable='true'; content.innerHTML='<h2>Title</h2><p>Content</p>'; page.appendChild(content); ensureWBCanvas(page); shell.appendChild(page); refreshPages(); showPage(pages.length-1); }
+  function createBlank(){ const page=document.createElement('div'); page.className='page'; const content=document.createElement('div'); content.className='content'; content.contentEditable='true'; content.innerHTML=''; page.appendChild(content); ensureWBCanvas(page); shell.appendChild(page); refreshPages(); showPage(pages.length-1); }
 
   function moveSlide(from,to){
     if(to<0||to>=pages.length) return;
@@ -770,6 +782,7 @@ $('#qaSend')?.addEventListener('click',()=>{ const txt = $('#qaInput').value.tri
   if(fontSelect) fontSelect.addEventListener('change',()=>document.execCommand('fontName',false,fontSelect.value));
   if(fontSize) fontSize.addEventListener('change',()=>document.execCommand('fontSize',false,fontSize.value));
   if(fontColor) fontColor.addEventListener('input',()=>document.execCommand('foreColor',false,fontColor.value));
+  if(textBg) textBg.addEventListener('input',()=>{ if(selectedEl && selectedEl.classList.contains('textbox')) selectedEl.style.background=textBg.value; });
   if(textBtn){
     textBtn.addEventListener('click',()=>{
       const page=pages[current];
@@ -803,6 +816,18 @@ $('#qaSend')?.addEventListener('click',()=>{ const txt = $('#qaInput').value.tri
       };
       reader.readAsDataURL(f);
       imgInput.value='';
+    });
+  }
+  if(deleteBtn){
+    deleteBtn.addEventListener('click',()=>{
+      if(selectedEl){
+        selectedEl.remove();
+        selectedEl=null;
+        hideHandles();
+        if(layerSelect) layerSelect.disabled=true;
+        if(textBg) textBg.disabled=true;
+        deleteBtn.disabled=true;
+      }
     });
   }
   if(layerSelect){
