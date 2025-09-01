@@ -692,7 +692,7 @@ $('#qaSend')?.addEventListener('click',()=>{ const txt = $('#qaInput').value.tri
     window.addEventListener('pointermove',onMove);
     window.addEventListener('pointerup',onUp);
   }
-  document.addEventListener('click',e=>{ if(!e.target.closest('.draggable') && !e.target.closest('.img-handle') && !e.target.closest('#imgLayer')){ if(selectedEl){selectedEl.classList.remove('selected'); selectedEl=null; hideHandles(); if(layerSelect) layerSelect.disabled=true; if(textBg) textBg.disabled=true; if(deleteBtn) deleteBtn.disabled=true;} } });
+  document.addEventListener('click',e=>{ if(!e.target.closest('.draggable') && !e.target.closest('.img-handle') && !e.target.closest('#imgLayer') && !e.target.closest('#textToolbar')){ if(selectedEl){selectedEl.classList.remove('selected'); selectedEl=null; hideHandles(); if(layerSelect) layerSelect.disabled=true; if(textBg) textBg.disabled=true; if(deleteBtn) deleteBtn.disabled=true;} } });
   document.addEventListener('keydown',e=>{ if(selectedEl && (e.key==='Delete' || e.key==='Backspace') && !e.target.isContentEditable){ e.preventDefault(); selectedEl.remove(); selectedEl=null; hideHandles(); if(layerSelect) layerSelect.disabled=true; if(textBg) textBg.disabled=true; if(deleteBtn) deleteBtn.disabled=true; } });
 
   function BuildState(page){
