@@ -487,15 +487,15 @@ $('#qaSend')?.addEventListener('click',()=>{ const txt = $('#qaInput').value.tri
   if(!shell) return;
 
   const prevPage=$('#prevPage'), nextPage=$('#nextPage'), pageDots=$('#pageDots');
-  const presName=$('#presName'), presNew=$('#presNew'), presAdd=$('#presAdd'), presSave=$('#presSave'), presList=$('#presList'), presLoad=$('#presLoad');
+  const presName=$('#presName'), presNew=$('#presNew'), presAdd=$('#presAdd'), presDup=$('#presDup'), presSave=$('#presSave'), presList=$('#presList'), presLoad=$('#presLoad');
   const buildPrev=$('#buildPrev'), buildNext=$('#buildNext'), buildInfo=$('#buildInfo'), buildEdit=$('#buildEdit'), buildClear=$('#buildClear');
-  const fontSelect=$('#fontSelect'), fontSize=$('#fontSize'), fontColor=$('#fontColor'), imgBtn=$('#imgBtn'), imgInput=$('#imgInput');
+  const fontSelect=$('#fontSelect'), fontSize=$('#fontSize'), fontColor=$('#fontColor'), imgBtn=$('#imgBtn'), textBtn=$('#textBtn'), imgInput=$('#imgInput');
   const moveLeft=$('#moveLeft'), moveRight=$('#moveRight');
   const layerSelect=$('#imgLayer');
   const wbFab=$('#wbFab'), wbColorInput=$('#wbColor'), wbColorSwatch=$('#wbColorSwatch'), wbColorSeg=$('#wbColors'), wbSizeSeg=$('#wbSize'), wbClear=$('#wbClear'), wbIndicator=$('#wbIndicator'), wbToolSeg=$('#wbTool'), wbUndo=$('#wbUndo'), wbRedo=$('#wbRedo');
 
   let pages=[], builds=[], current=0;
-  let selectedImg=null;
+  let selectedEl=null;
   let resizeHandle=null, rotateHandle=null;
   let wbColor='#7cd992', wbSizeVal=4, drawing=false, wbTool='pen';
   try{ document.execCommand('styleWithCSS', true); }catch(_){ }
@@ -591,9 +591,9 @@ $('#qaSend')?.addEventListener('click',()=>{ const txt = $('#qaInput').value.tri
     page.appendChild(rotateHandle);
   }
   function positionHandles(){
-    if(!selectedImg||!resizeHandle||!rotateHandle) return;
-    const rect=selectedImg.getBoundingClientRect();
-    const prect=selectedImg.parentElement.getBoundingClientRect();
+    if(!selectedEl||!resizeHandle||!rotateHandle) return;
+    const rect=selectedEl.getBoundingClientRect();
+    const prect=selectedEl.parentElement.getBoundingClientRect();
     const left=rect.left-prect.left;
     const top=rect.top-prect.top;
     const w=rect.width;
@@ -609,37 +609,37 @@ $('#qaSend')?.addEventListener('click',()=>{ const txt = $('#qaInput').value.tri
     if(resizeHandle) resizeHandle.style.display='none';
     if(rotateHandle) rotateHandle.style.display='none';
   }
-  function makeDraggable(img){
-    img.classList.add('draggable');
-    img.style.position='absolute';
-    if(!img.style.left) img.style.left='10px';
-    if(!img.style.top) img.style.top='10px';
-    if(!img.dataset.layer) img.dataset.layer=layerSelect?.value||'4';
-    img.style.zIndex=String(Number(img.dataset.layer||'4')-1);
-    img.draggable=false;
-    img.addEventListener('pointerdown',imgDragStart);
+  function makeDraggable(el){
+    el.classList.add('draggable');
+    el.style.position='absolute';
+    if(!el.style.left) el.style.left='10px';
+    if(!el.style.top) el.style.top='10px';
+    if(!el.dataset.layer) el.dataset.layer=layerSelect?.value||'4';
+    el.style.zIndex=String(Number(el.dataset.layer||'4')-1);
+    el.draggable=false;
+    el.addEventListener('pointerdown',dragStart);
   }
-  function imgDragStart(ev){
-    const img=ev.target;
-    selectImg(img);
+  function dragStart(ev){
+    const el=ev.target;
+    selectEl(el);
     const startX=ev.clientX,startY=ev.clientY;
-    const initX=parseFloat(img.style.left)||0, initY=parseFloat(img.style.top)||0;
-    function onMove(e){ img.style.left=(initX+e.clientX-startX)+'px'; img.style.top=(initY+e.clientY-startY)+'px'; positionHandles(); }
+    const initX=parseFloat(el.style.left)||0, initY=parseFloat(el.style.top)||0;
+    function onMove(e){ el.style.left=(initX+e.clientX-startX)+'px'; el.style.top=(initY+e.clientY-startY)+'px'; positionHandles(); }
     function onUp(){ window.removeEventListener('pointermove',onMove); window.removeEventListener('pointerup',onUp); }
     window.addEventListener('pointermove',onMove);
     window.addEventListener('pointerup',onUp);
   }
-  function selectImg(img){
-    if(selectedImg) selectedImg.classList.remove('selected');
-    selectedImg=img;
-    img.classList.add('selected');
-    ensureHandles(img.parentElement);
+  function selectEl(el){
+    if(selectedEl) selectedEl.classList.remove('selected');
+    selectedEl=el;
+    el.classList.add('selected');
+    ensureHandles(el.parentElement);
     positionHandles();
-    if(layerSelect){ layerSelect.disabled=false; layerSelect.value=img.dataset.layer||'4'; }
+    if(layerSelect){ layerSelect.disabled=false; layerSelect.value=el.dataset.layer||'4'; }
   }
   function resizeStart(ev){
     ev.preventDefault(); ev.stopPropagation();
-    const rect=selectedImg.getBoundingClientRect();
+    const rect=selectedEl.getBoundingClientRect();
     const startW=rect.width,startH=rect.height;
     const startX=ev.clientX,startY=ev.clientY;
     const ratio=startW/startH;
@@ -655,8 +655,8 @@ $('#qaSend')?.addEventListener('click',()=>{ const txt = $('#qaInput').value.tri
         newH=Math.max(20,newH);
         newW=newH*ratio;
       }
-      selectedImg.style.width=newW+'px';
-      selectedImg.style.height=newH+'px';
+      selectedEl.style.width=newW+'px';
+      selectedEl.style.height=newH+'px';
       positionHandles();
     }
     function onUp(){ window.removeEventListener('pointermove',onMove); window.removeEventListener('pointerup',onUp); }
@@ -665,23 +665,23 @@ $('#qaSend')?.addEventListener('click',()=>{ const txt = $('#qaInput').value.tri
   }
   function rotateStart(ev){
     ev.preventDefault(); ev.stopPropagation();
-    const rect=selectedImg.getBoundingClientRect();
+    const rect=selectedEl.getBoundingClientRect();
     const cx=rect.left+rect.width/2;
     const cy=rect.top+rect.height/2;
     const startAng=Math.atan2(ev.clientY-cy, ev.clientX-cx);
-    const base=parseFloat(selectedImg.dataset.rotate||'0');
+    const base=parseFloat(selectedEl.dataset.rotate||'0');
     function onMove(e){
       const ang=Math.atan2(e.clientY-cy, e.clientX-cx);
       const rot=base+(ang-startAng);
-      selectedImg.style.transform=`rotate(${rot}rad)`;
-      selectedImg.dataset.rotate=rot;
+      selectedEl.style.transform=`rotate(${rot}rad)`;
+      selectedEl.dataset.rotate=rot;
       positionHandles();
     }
     function onUp(){ window.removeEventListener('pointermove',onMove); window.removeEventListener('pointerup',onUp); }
     window.addEventListener('pointermove',onMove);
     window.addEventListener('pointerup',onUp);
   }
-  document.addEventListener('click',e=>{ if(!e.target.closest('img.draggable') && !e.target.closest('.img-handle') && !e.target.closest('#imgLayer')){ if(selectedImg){selectedImg.classList.remove('selected'); selectedImg=null; hideHandles(); if(layerSelect) layerSelect.disabled=true;} } });
+  document.addEventListener('click',e=>{ if(!e.target.closest('.draggable') && !e.target.closest('.img-handle') && !e.target.closest('#imgLayer')){ if(selectedEl){selectedEl.classList.remove('selected'); selectedEl=null; hideHandles(); if(layerSelect) layerSelect.disabled=true;} } });
 
   function BuildState(page){
     const content=page.querySelector('.content');
@@ -721,25 +721,43 @@ $('#qaSend')?.addEventListener('click',()=>{ const txt = $('#qaInput').value.tri
     showPage(to);
   }
 
+  function duplicateSlide(idx){
+    if(idx<0||idx>=pages.length) return;
+    const src=pages[idx];
+    const page=document.createElement('div');
+    page.className='page';
+    page.innerHTML=src.innerHTML;
+    page.querySelectorAll('canvas.whiteboard').forEach(c=>c.remove());
+    page.querySelectorAll('.img-handle').forEach(h=>h.remove());
+    const content=page.querySelector('.content'); if(content) content.contentEditable='true';
+    page.querySelectorAll('.draggable').forEach(makeDraggable);
+    src.after(page);
+    refreshPages();
+    const newPage=pages[idx+1];
+    if(src._wb && newPage && newPage._wb){ newPage._wb.strokes=JSON.parse(JSON.stringify(src._wb.strokes)); newPage._wb.redo=[]; redrawWB(newPage); }
+    showPage(idx+1);
+  }
+
   function gather(){
     return { slides: pages.map(p=>{
       const clone=p.cloneNode(true);
       clone.querySelectorAll('canvas.whiteboard').forEach(c=>c.remove());
       clone.querySelectorAll('.img-handle').forEach(h=>h.remove());
-      clone.querySelectorAll('img.selected').forEach(i=>i.classList.remove('selected'));
+      clone.querySelectorAll('.draggable.selected').forEach(i=>i.classList.remove('selected'));
       return { html: clone.innerHTML, wb: p._wb ? p._wb.strokes : [] };
     }) };
   }
 
   async function save(){ const name=(presName?.value||'').trim(); if(!name){ toast('Name required'); return; } try{ await fetch('/api/presentations/'+encodeURIComponent(name), { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify(gather()) }); loadList(); toast('Saved'); }catch(_){ toast('Save failed'); } }
 
-  async function load(name){ try{ const res=await fetch('/api/presentations/'+encodeURIComponent(name)); if(!res.ok) return; const data=await res.json(); $$('#presentation .page-shell .page').forEach(p=>p.remove()); (data.slides||[]).forEach(s=>{ const page=document.createElement('div'); page.className='page'; page.innerHTML=s.html||''; const content=page.querySelector('.content'); if(content) content.contentEditable='true'; page.querySelectorAll('img.draggable').forEach(makeDraggable); ensureWBCanvas(page); shell.appendChild(page); if(page._wb){ page._wb.strokes = s.wb || []; page._wb.redo = []; redrawWB(page); } }); refreshPages(); showPage(0); presName.value=name; }catch(_){ toast('Load failed'); } }
+  async function load(name){ try{ const res=await fetch('/api/presentations/'+encodeURIComponent(name)); if(!res.ok) return; const data=await res.json(); $$('#presentation .page-shell .page').forEach(p=>p.remove()); (data.slides||[]).forEach(s=>{ const page=document.createElement('div'); page.className='page'; page.innerHTML=s.html||''; const content=page.querySelector('.content'); if(content) content.contentEditable='true'; page.querySelectorAll('.draggable').forEach(makeDraggable); ensureWBCanvas(page); shell.appendChild(page); if(page._wb){ page._wb.strokes = s.wb || []; page._wb.redo = []; redrawWB(page); } }); refreshPages(); showPage(0); presName.value=name; }catch(_){ toast('Load failed'); } }
 
   async function loadList(){ try{ const res=await fetch('/api/presentations'); if(!res.ok) return; const arr=await res.json(); if(presList){ presList.innerHTML='<option value="">(choose)</option>'+arr.map(n=>`<option value="${n}">${n}</option>`).join(''); } }catch(_){ /* noop */ } }
 
   if(prevPage) prevPage.addEventListener('click',()=>showPage(current-1));
   if(nextPage) nextPage.addEventListener('click',()=>showPage(current+1));
   if(presAdd) presAdd.addEventListener('click',createBlank);
+  if(presDup) presDup.addEventListener('click',()=>duplicateSlide(current));
   if(presNew) presNew.addEventListener('click',()=>{ $$('#presentation .page-shell .page').forEach(p=>p.remove()); createBlank(); presName.value=''; });
   if(presSave) presSave.addEventListener('click',()=>{ save(); hideFileMenu(); });
   if(presLoad) presLoad.addEventListener('click',()=>{ const n=presList.value; if(n) load(n); hideFileMenu(); });
@@ -752,6 +770,21 @@ $('#qaSend')?.addEventListener('click',()=>{ const txt = $('#qaInput').value.tri
   if(fontSelect) fontSelect.addEventListener('change',()=>document.execCommand('fontName',false,fontSelect.value));
   if(fontSize) fontSize.addEventListener('change',()=>document.execCommand('fontSize',false,fontSize.value));
   if(fontColor) fontColor.addEventListener('input',()=>document.execCommand('foreColor',false,fontColor.value));
+  if(textBtn){
+    textBtn.addEventListener('click',()=>{
+      const page=pages[current];
+      if(page){
+        const box=document.createElement('div');
+        box.className='textbox';
+        box.contentEditable='true';
+        box.textContent='Text';
+        makeDraggable(box);
+        page.appendChild(box);
+        selectEl(box);
+        box.focus();
+      }
+    });
+  }
   if(imgBtn && imgInput){
     imgBtn.addEventListener('click',()=>imgInput.click());
     imgInput.addEventListener('change',()=>{
@@ -765,7 +798,7 @@ $('#qaSend')?.addEventListener('click',()=>{ const txt = $('#qaInput').value.tri
           img.src=e.target.result;
           makeDraggable(img);
           page.appendChild(img);
-          selectImg(img);
+          selectEl(img);
         }
       };
       reader.readAsDataURL(f);
@@ -773,7 +806,7 @@ $('#qaSend')?.addEventListener('click',()=>{ const txt = $('#qaInput').value.tri
     });
   }
   if(layerSelect){
-    layerSelect.addEventListener('change',()=>{ if(selectedImg){ selectedImg.dataset.layer=layerSelect.value; selectedImg.style.zIndex=Number(layerSelect.value)-1; }});
+    layerSelect.addEventListener('change',()=>{ if(selectedEl){ selectedEl.dataset.layer=layerSelect.value; selectedEl.style.zIndex=Number(layerSelect.value)-1; }});
   }
   if(wbFab){
     wbFab.addEventListener('click',()=>{ const on=document.body.classList.toggle('ink-on'); document.body.classList.toggle('wb-open'); wbFab.classList.toggle('active',on); wbIndicator?.classList.toggle('on',on); });
