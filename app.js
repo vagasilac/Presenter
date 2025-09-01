@@ -504,7 +504,15 @@ $('#qaSend')?.addEventListener('click',()=>{ const txt = $('#qaInput').value.tri
 
   function initColorPicker(input, swatch, onChange){
     if(!input || !swatch) return;
-    swatch.addEventListener('click', ()=>input.click());
+    swatch.addEventListener('click', ()=>{
+      if (typeof input.showPicker === 'function') {
+        try { input.showPicker(); }
+        catch(_){ input.click(); }
+      }
+      else {
+        input.click();
+      }
+    });
     function sync(){ swatch.style.background=input.value; onChange?.(input.value); }
     input.addEventListener('input', sync);
     input.addEventListener('change', sync);
