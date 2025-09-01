@@ -483,7 +483,7 @@ $('#qaSend')?.addEventListener('click',()=>{ const txt = $('#qaInput').value.tri
 // ---------- Builds (step-by-step) ----------
 // ---------- Presentation builder ----------
 (function(){
-  const shell = document.querySelector('#presentation .page-shell');
+  const shell = document.querySelector('#presentation');
   if(!shell) return;
 
   const prevPage=$('#prevPage'), nextPage=$('#nextPage'), pageDots=$('#pageDots');
@@ -741,7 +741,7 @@ $('#qaSend')?.addEventListener('click',()=>{ const txt = $('#qaInput').value.tri
   }
 
   function refreshPages(){
-    pages=$$('#presentation .page-shell .page');
+    pages=$$('#presentation .page');
     pages.forEach(p=>ensureWBCanvas(p));
     builds=pages.map(p=>BuildState(p));
     updateDots();
@@ -792,7 +792,7 @@ $('#qaSend')?.addEventListener('click',()=>{ const txt = $('#qaInput').value.tri
 
   async function save(){ const name=(presName?.value||'').trim(); if(!name){ toast('Name required'); return; } try{ await fetch('/api/presentations/'+encodeURIComponent(name), { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify(gather()) }); loadList(); toast('Saved'); }catch(_){ toast('Save failed'); } }
 
-  async function load(name){ try{ const res=await fetch('/api/presentations/'+encodeURIComponent(name)); if(!res.ok) return; const data=await res.json(); $$('#presentation .page-shell .page').forEach(p=>p.remove()); (data.slides||[]).forEach(s=>{ const page=document.createElement('div'); page.className='page'; page.innerHTML=s.html||''; const content=page.querySelector('.content'); if(content) content.contentEditable='true'; page.querySelectorAll('.draggable').forEach(makeDraggable); ensureWBCanvas(page); shell.appendChild(page); if(page._wb){ page._wb.strokes = s.wb || []; page._wb.redo = []; redrawWB(page); } }); refreshPages(); showPage(0); presName.value=name; }catch(_){ toast('Load failed'); } }
+  async function load(name){ try{ const res=await fetch('/api/presentations/'+encodeURIComponent(name)); if(!res.ok) return; const data=await res.json(); $$('#presentation .page').forEach(p=>p.remove()); (data.slides||[]).forEach(s=>{ const page=document.createElement('div'); page.className='page'; page.innerHTML=s.html||''; const content=page.querySelector('.content'); if(content) content.contentEditable='true'; page.querySelectorAll('.draggable').forEach(makeDraggable); ensureWBCanvas(page); shell.appendChild(page); if(page._wb){ page._wb.strokes = s.wb || []; page._wb.redo = []; redrawWB(page); } }); refreshPages(); showPage(0); presName.value=name; }catch(_){ toast('Load failed'); } }
 
   async function loadList(){ try{ const res=await fetch('/api/presentations'); if(!res.ok) return; const arr=await res.json(); if(presList){ presList.innerHTML='<option value="">(choose)</option>'+arr.map(n=>`<option value="${n}">${n}</option>`).join(''); } }catch(_){ /* noop */ } }
 
@@ -800,7 +800,7 @@ $('#qaSend')?.addEventListener('click',()=>{ const txt = $('#qaInput').value.tri
   if(nextPage) nextPage.addEventListener('click',()=>showPage(current+1));
   if(presAdd) presAdd.addEventListener('click',createBlank);
   if(presDup) presDup.addEventListener('click',()=>duplicateSlide(current));
-  if(presNew) presNew.addEventListener('click',()=>{ $$('#presentation .page-shell .page').forEach(p=>p.remove()); createBlank(); presName.value=''; });
+  if(presNew) presNew.addEventListener('click',()=>{ $$('#presentation .page').forEach(p=>p.remove()); createBlank(); presName.value=''; });
   if(presSave) presSave.addEventListener('click',()=>{ save(); hideFileMenu(); });
   if(presLoad) presLoad.addEventListener('click',()=>{ const n=presList.value; if(n) load(n); hideFileMenu(); });
   if(moveLeft) moveLeft.addEventListener('click',()=>moveSlide(current, current-1));
