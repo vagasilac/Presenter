@@ -504,15 +504,18 @@ $('#qaSend')?.addEventListener('click',()=>{ const txt = $('#qaInput').value.tri
 
   function initColorPicker(input, swatch, onChange){
     if(!input || !swatch) return;
-    swatch.addEventListener('click', ()=>{
-      if (typeof input.showPicker === 'function') {
-        try { input.showPicker(); }
-        catch(_){ input.click(); }
-      }
-      else {
-        input.click();
-      }
-    });
+    const isLabel = swatch.tagName === 'LABEL' && swatch.getAttribute('for') === input.id;
+    if(!isLabel){
+      swatch.addEventListener('click', ()=>{
+        if (typeof input.showPicker === 'function') {
+          try { input.showPicker(); }
+          catch(_){ input.click(); }
+        }
+        else {
+          input.click();
+        }
+      });
+    }
     function sync(){ swatch.style.background=input.value; onChange?.(input.value); }
     input.addEventListener('input', sync);
     input.addEventListener('change', sync);
@@ -866,9 +869,9 @@ $('#qaSend')?.addEventListener('click',()=>{ const txt = $('#qaInput').value.tri
     wbFab.addEventListener('click',()=>{ const on=document.body.classList.toggle('ink-on'); document.body.classList.toggle('wb-open'); wbFab.classList.toggle('active',on); wbIndicator?.classList.toggle('on',on); });
   }
   if(wbColorSeg){
-    wbColorSeg.addEventListener('click',e=>{ const b=e.target.closest('button[data-color]'); if(!b) return; wbColor=b.dataset.color; wbColorInput.value=wbColor; wbColorSeg.querySelectorAll('button').forEach(x=>x.classList.remove('active')); b.classList.add('active'); });
+    wbColorSeg.addEventListener('click',e=>{ const b=e.target.closest('button[data-color]'); if(!b) return; wbColor=b.dataset.color; wbColorInput.value=wbColor; wbColorSeg.querySelectorAll('button,label').forEach(x=>x.classList.remove('active')); b.classList.add('active'); });
   }
-  initColorPicker(wbColorInput, wbColorSwatch, c=>{ wbColor=c; wbColorSeg?.querySelectorAll('button').forEach(x=>x.classList.remove('active')); wbColorSwatch.classList.add('active'); });
+  initColorPicker(wbColorInput, wbColorSwatch, c=>{ wbColor=c; wbColorSeg?.querySelectorAll('button,label').forEach(x=>x.classList.remove('active')); wbColorSwatch.classList.add('active'); });
   if(wbSizeSeg){
     wbSizeSeg.addEventListener('click',e=>{ const b=e.target.closest('button[data-size]'); if(!b) return; wbSizeVal=Number(b.dataset.size); wbSizeSeg.querySelectorAll('button').forEach(x=>x.classList.remove('active')); b.classList.add('active'); });
   }
