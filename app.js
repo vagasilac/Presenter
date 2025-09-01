@@ -506,12 +506,12 @@ $('#qaSend')?.addEventListener('click',()=>{ const txt = $('#qaInput').value.tri
     if(!input || !swatch) return;
     const isLabel = swatch.tagName === 'LABEL' && swatch.getAttribute('for') === input.id;
     if(!isLabel){
-      swatch.addEventListener('click', ()=>{
+      swatch.addEventListener('click', e=>{
+        e.preventDefault();
         if (typeof input.showPicker === 'function') {
-          try { input.showPicker(); }
-          catch(_){ input.click(); }
-        }
-        else {
+          const res = input.showPicker();
+          if(res && typeof res.catch === 'function') res.catch(()=>input.click());
+        } else {
           input.click();
         }
       });
