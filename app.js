@@ -504,7 +504,14 @@ $('#qaSend')?.addEventListener('click',()=>{ const txt = $('#qaInput').value.tri
 
   function initColorPicker(input, swatch, onChange){
     if(!input || !swatch) return;
+    let savedRange=null;
     const isLabel = swatch.tagName === 'LABEL' && swatch.getAttribute('for') === input.id;
+    swatch.addEventListener('mousedown',()=>{
+      const sel=document.getSelection();
+      if(sel && sel.rangeCount>0){
+        savedRange=sel.getRangeAt(0);
+      }
+    });
     if(!isLabel){
       swatch.addEventListener('click', e=>{
         e.preventDefault();
@@ -516,7 +523,18 @@ $('#qaSend')?.addEventListener('click',()=>{ const txt = $('#qaInput').value.tri
         }
       });
     }
-    function sync(){ swatch.style.background=input.value; onChange?.(input.value); }
+    function sync(){
+      swatch.style.background=input.value;
+      if(savedRange){
+        const sel=document.getSelection();
+        if(sel){
+          sel.removeAllRanges();
+          sel.addRange(savedRange);
+        }
+        savedRange=null;
+      }
+      onChange?.(input.value);
+    }
     input.addEventListener('input', sync);
     input.addEventListener('change', sync);
     sync();
