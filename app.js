@@ -489,7 +489,7 @@ $('#qaSend')?.addEventListener('click',()=>{ const txt = $('#qaInput').value.tri
   const prevPage=$('#prevPage'), nextPage=$('#nextPage'), pageDots=$('#pageDots');
   const presName=$('#presName'), presNew=$('#presNew'), presAdd=$('#presAdd'), presDup=$('#presDup'), presSave=$('#presSave'), presList=$('#presList'), presLoad=$('#presLoad');
   const buildPrev=$('#buildPrev'), buildNext=$('#buildNext'), buildInfo=$('#buildInfo'), buildEdit=$('#buildEdit'), buildClear=$('#buildClear');
-  const fontSelect=$('#fontSelect'), fontSize=$('#fontSize'), fontColor=$('#fontColor'), textBg=$('#textBg'), textBgTransparent=$('#textBgTransparent'), imgBtn=$('#imgBtn'), textBtn=$('#textBtn'), imgInput=$('#imgInput'), deleteBtn=$('#deleteBtn');
+  const fontSelect=$('#fontSelect'), fontSize=$('#fontSize'), fontColor=$('#fontColor'), fontColorSwatch=$('#fontColorSwatch'), textBg=$('#textBg'), textBgSwatch=$('#textBgSwatch'), textBgTransparent=$('#textBgTransparent'), imgBtn=$('#imgBtn'), textBtn=$('#textBtn'), imgInput=$('#imgInput'), deleteBtn=$('#deleteBtn');
   const moveLeft=$('#moveLeft'), moveRight=$('#moveRight');
   const layerSelect=$('#imgLayer');
   const wbFab=$('#wbFab'), wbColorInput=$('#wbColor'), wbColorSwatch=$('#wbColorSwatch'), wbColorSeg=$('#wbColors'), wbSizeSeg=$('#wbSize'), wbClear=$('#wbClear'), wbIndicator=$('#wbIndicator'), wbToolSeg=$('#wbTool'), wbUndo=$('#wbUndo'), wbRedo=$('#wbRedo');
@@ -501,6 +501,15 @@ $('#qaSend')?.addEventListener('click',()=>{ const txt = $('#qaInput').value.tri
   try{ document.execCommand('styleWithCSS', true); }catch(_){ }
 
   function rgbToHex(rgb){ const m=rgb.match(/\d+/g); return m ? '#'+m.slice(0,3).map(x=>Number(x).toString(16).padStart(2,'0')).join('') : '#ffffff'; }
+
+  function initColorPicker(input, swatch, onChange){
+    if(!input || !swatch) return;
+    swatch.addEventListener('click', ()=>input.click());
+    function sync(){ swatch.style.background=input.value; onChange?.(input.value); }
+    input.addEventListener('input', sync);
+    input.addEventListener('change', sync);
+    sync();
+  }
 
   function redrawWB(page){
     const wb = page._wb;
@@ -639,12 +648,15 @@ $('#qaSend')?.addEventListener('click',()=>{ const txt = $('#qaInput').value.tri
     positionHandles();
     if(layerSelect){ layerSelect.disabled=false; layerSelect.value=el.dataset.layer||'4'; }
     if(deleteBtn) deleteBtn.disabled=false;
-    if(textBg){
+    if(textBg && textBgSwatch){
       if(el.classList.contains('textbox')){
         textBg.disabled=false;
+        textBgSwatch.disabled=false;
         textBg.value=rgbToHex(getComputedStyle(el).backgroundColor);
+        textBgSwatch.style.background=textBg.value;
       }else{
         textBg.disabled=true;
+        textBgSwatch.disabled=true;
       }
     }
     if(textBgTransparent){
@@ -699,8 +711,8 @@ $('#qaSend')?.addEventListener('click',()=>{ const txt = $('#qaInput').value.tri
     window.addEventListener('pointermove',onMove);
     window.addEventListener('pointerup',onUp);
   }
-  document.addEventListener('click',e=>{ if(!e.target.closest('.draggable') && !e.target.closest('.img-handle') && !e.target.closest('#imgLayer') && !e.target.closest('#textToolbar')){ if(selectedEl){selectedEl.classList.remove('selected'); selectedEl=null; hideHandles(); if(layerSelect) layerSelect.disabled=true; if(textBg) textBg.disabled=true; if(textBgTransparent) textBgTransparent.disabled=true; if(deleteBtn) deleteBtn.disabled=true;} } });
-  document.addEventListener('keydown',e=>{ if(selectedEl && (e.key==='Delete' || e.key==='Backspace') && !e.target.isContentEditable){ e.preventDefault(); selectedEl.remove(); selectedEl=null; hideHandles(); if(layerSelect) layerSelect.disabled=true; if(textBg) textBg.disabled=true; if(textBgTransparent) textBgTransparent.disabled=true; if(deleteBtn) deleteBtn.disabled=true; } });
+  document.addEventListener('click',e=>{ if(!e.target.closest('.draggable') && !e.target.closest('.img-handle') && !e.target.closest('#imgLayer') && !e.target.closest('#textToolbar')){ if(selectedEl){selectedEl.classList.remove('selected'); selectedEl=null; hideHandles(); if(layerSelect) layerSelect.disabled=true; if(textBg && textBgSwatch){ textBg.disabled=true; textBgSwatch.disabled=true; } if(textBgTransparent) textBgTransparent.disabled=true; if(deleteBtn) deleteBtn.disabled=true;} } });
+  document.addEventListener('keydown',e=>{ if(selectedEl && (e.key==='Delete' || e.key==='Backspace') && !e.target.isContentEditable){ e.preventDefault(); selectedEl.remove(); selectedEl=null; hideHandles(); if(layerSelect) layerSelect.disabled=true; if(textBg && textBgSwatch){ textBg.disabled=true; textBgSwatch.disabled=true; } if(textBgTransparent) textBgTransparent.disabled=true; if(deleteBtn) deleteBtn.disabled=true; } });
 
   function BuildState(page){
     const content=page.querySelector('.content');
@@ -788,9 +800,9 @@ $('#qaSend')?.addEventListener('click',()=>{ const txt = $('#qaInput').value.tri
   if(buildClear) buildClear.addEventListener('click',()=>builds[current]?.clear());
   if(fontSelect) fontSelect.addEventListener('change',()=>document.execCommand('fontName',false,fontSelect.value));
   if(fontSize) fontSize.addEventListener('change',()=>document.execCommand('fontSize',false,fontSize.value));
-  if(fontColor) fontColor.addEventListener('input',()=>document.execCommand('foreColor',false,fontColor.value));
-  if(textBg) textBg.addEventListener('input',()=>{ if(selectedEl && selectedEl.classList.contains('textbox')) selectedEl.style.background=textBg.value; });
-  if(textBgTransparent) textBgTransparent.addEventListener('click',()=>{ if(selectedEl && selectedEl.classList.contains('textbox')) selectedEl.style.background='transparent'; });
+  initColorPicker(fontColor, fontColorSwatch, c=>document.execCommand('foreColor',false,c));
+  initColorPicker(textBg, textBgSwatch, c=>{ if(selectedEl && selectedEl.classList.contains('textbox')) selectedEl.style.background=c; });
+  if(textBgTransparent) textBgTransparent.addEventListener('click',()=>{ if(selectedEl && selectedEl.classList.contains('textbox')){ selectedEl.style.background='transparent'; textBgSwatch.style.background='transparent'; } });
   if(textBtn){
     textBtn.addEventListener('click',()=>{
       const page=pages[current];
@@ -848,12 +860,7 @@ $('#qaSend')?.addEventListener('click',()=>{ const txt = $('#qaInput').value.tri
   if(wbColorSeg){
     wbColorSeg.addEventListener('click',e=>{ const b=e.target.closest('button[data-color]'); if(!b) return; wbColor=b.dataset.color; wbColorInput.value=wbColor; wbColorSeg.querySelectorAll('button').forEach(x=>x.classList.remove('active')); b.classList.add('active'); });
   }
-  if(wbColorSwatch && wbColorInput){
-    wbColorSwatch.addEventListener('click',()=>wbColorInput.click());
-    function setWbColor(){ wbColor=wbColorInput.value; wbColorSwatch.style.background=wbColor; wbColorSeg?.querySelectorAll('button').forEach(x=>x.classList.remove('active')); wbColorSwatch.classList.add('active'); }
-    wbColorInput.addEventListener('input', setWbColor);
-    wbColorInput.addEventListener('change', setWbColor);
-  }
+  initColorPicker(wbColorInput, wbColorSwatch, c=>{ wbColor=c; wbColorSeg?.querySelectorAll('button').forEach(x=>x.classList.remove('active')); wbColorSwatch.classList.add('active'); });
   if(wbSizeSeg){
     wbSizeSeg.addEventListener('click',e=>{ const b=e.target.closest('button[data-size]'); if(!b) return; wbSizeVal=Number(b.dataset.size); wbSizeSeg.querySelectorAll('button').forEach(x=>x.classList.remove('active')); b.classList.add('active'); });
   }

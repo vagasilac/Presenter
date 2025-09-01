@@ -73,8 +73,10 @@
           <option value="5">Large</option>
           <option value="7">Huge</option>
         </select>
-        <input type="color" id="fontColor" />
-        <input type="color" id="textBg" value="#ffffff" disabled />
+        <button id="fontColorSwatch" class="color-swatch" title="Text color" style="background:#000000"></button>
+        <button id="textBgSwatch" class="color-swatch" title="Textbox background color" style="background:#ffffff" disabled></button>
+        <input type="color" id="fontColor" value="#000000" class="color-hidden" />
+        <input type="color" id="textBg" value="#ffffff" class="color-hidden" disabled />
         <button id="textBgTransparent" class="pill" disabled>Transparent</button>
         <button id="imgBtn" class="pill">Insert Image</button>
         <button id="textBtn" class="pill">Insert Textbox</button>
