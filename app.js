@@ -489,7 +489,7 @@ $('#qaSend')?.addEventListener('click',()=>{ const txt = $('#qaInput').value.tri
   const prevPage=$('#prevPage'), nextPage=$('#nextPage'), pageDots=$('#pageDots');
   const presName=$('#presName'), presNew=$('#presNew'), presAdd=$('#presAdd'), presDup=$('#presDup'), presSave=$('#presSave'), presList=$('#presList'), presLoad=$('#presLoad');
   const buildPrev=$('#buildPrev'), buildNext=$('#buildNext'), buildInfo=$('#buildInfo'), buildEdit=$('#buildEdit'), buildClear=$('#buildClear');
-  const fontSelect=$('#fontSelect'), fontSize=$('#fontSize'), fontColor=$('#fontColor'), textBg=$('#textBg'), imgBtn=$('#imgBtn'), textBtn=$('#textBtn'), imgInput=$('#imgInput'), deleteBtn=$('#deleteBtn');
+  const fontSelect=$('#fontSelect'), fontSize=$('#fontSize'), fontColor=$('#fontColor'), textBg=$('#textBg'), textBgTransparent=$('#textBgTransparent'), imgBtn=$('#imgBtn'), textBtn=$('#textBtn'), imgInput=$('#imgInput'), deleteBtn=$('#deleteBtn');
   const moveLeft=$('#moveLeft'), moveRight=$('#moveRight');
   const layerSelect=$('#imgLayer');
   const wbFab=$('#wbFab'), wbColorInput=$('#wbColor'), wbColorSwatch=$('#wbColorSwatch'), wbColorSeg=$('#wbColors'), wbSizeSeg=$('#wbSize'), wbClear=$('#wbClear'), wbIndicator=$('#wbIndicator'), wbToolSeg=$('#wbTool'), wbUndo=$('#wbUndo'), wbRedo=$('#wbRedo');
@@ -647,6 +647,13 @@ $('#qaSend')?.addEventListener('click',()=>{ const txt = $('#qaInput').value.tri
         textBg.disabled=true;
       }
     }
+    if(textBgTransparent){
+      if(el.classList.contains('textbox')){
+        textBgTransparent.disabled=false;
+      }else{
+        textBgTransparent.disabled=true;
+      }
+    }
   }
   function resizeStart(ev){
     ev.preventDefault(); ev.stopPropagation();
@@ -692,8 +699,8 @@ $('#qaSend')?.addEventListener('click',()=>{ const txt = $('#qaInput').value.tri
     window.addEventListener('pointermove',onMove);
     window.addEventListener('pointerup',onUp);
   }
-  document.addEventListener('click',e=>{ if(!e.target.closest('.draggable') && !e.target.closest('.img-handle') && !e.target.closest('#imgLayer') && !e.target.closest('#textToolbar')){ if(selectedEl){selectedEl.classList.remove('selected'); selectedEl=null; hideHandles(); if(layerSelect) layerSelect.disabled=true; if(textBg) textBg.disabled=true; if(deleteBtn) deleteBtn.disabled=true;} } });
-  document.addEventListener('keydown',e=>{ if(selectedEl && (e.key==='Delete' || e.key==='Backspace') && !e.target.isContentEditable){ e.preventDefault(); selectedEl.remove(); selectedEl=null; hideHandles(); if(layerSelect) layerSelect.disabled=true; if(textBg) textBg.disabled=true; if(deleteBtn) deleteBtn.disabled=true; } });
+  document.addEventListener('click',e=>{ if(!e.target.closest('.draggable') && !e.target.closest('.img-handle') && !e.target.closest('#imgLayer') && !e.target.closest('#textToolbar')){ if(selectedEl){selectedEl.classList.remove('selected'); selectedEl=null; hideHandles(); if(layerSelect) layerSelect.disabled=true; if(textBg) textBg.disabled=true; if(textBgTransparent) textBgTransparent.disabled=true; if(deleteBtn) deleteBtn.disabled=true;} } });
+  document.addEventListener('keydown',e=>{ if(selectedEl && (e.key==='Delete' || e.key==='Backspace') && !e.target.isContentEditable){ e.preventDefault(); selectedEl.remove(); selectedEl=null; hideHandles(); if(layerSelect) layerSelect.disabled=true; if(textBg) textBg.disabled=true; if(textBgTransparent) textBgTransparent.disabled=true; if(deleteBtn) deleteBtn.disabled=true; } });
 
   function BuildState(page){
     const content=page.querySelector('.content');
@@ -783,6 +790,7 @@ $('#qaSend')?.addEventListener('click',()=>{ const txt = $('#qaInput').value.tri
   if(fontSize) fontSize.addEventListener('change',()=>document.execCommand('fontSize',false,fontSize.value));
   if(fontColor) fontColor.addEventListener('input',()=>document.execCommand('foreColor',false,fontColor.value));
   if(textBg) textBg.addEventListener('input',()=>{ if(selectedEl && selectedEl.classList.contains('textbox')) selectedEl.style.background=textBg.value; });
+  if(textBgTransparent) textBgTransparent.addEventListener('click',()=>{ if(selectedEl && selectedEl.classList.contains('textbox')) selectedEl.style.background='transparent'; });
   if(textBtn){
     textBtn.addEventListener('click',()=>{
       const page=pages[current];
@@ -826,6 +834,7 @@ $('#qaSend')?.addEventListener('click',()=>{ const txt = $('#qaInput').value.tri
         hideHandles();
         if(layerSelect) layerSelect.disabled=true;
         if(textBg) textBg.disabled=true;
+        if(textBgTransparent) textBgTransparent.disabled=true;
         deleteBtn.disabled=true;
       }
     });
