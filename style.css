@@ -24,7 +24,7 @@ header{display:flex;align-items:center;gap:8px;padding:14px 18px;border-bottom:1
 .file-menu{background:#0f1520;border:1px solid #1e2a39;border-radius:12px;padding:8px;gap:8px;position:absolute;top:100%;left:0;z-index:1000}
 
 /* Layout */
-main{padding:18px;display:grid;gap:18px}
+main{padding:18px;display:grid;gap:18px;grid-template-rows:1fr}
 .grid{display:grid;gap:14px}
 .cols-2{grid-template-columns:repeat(2,minmax(0,1fr))}
 .cols-3{grid-template-columns:repeat(3,minmax(0,1fr))}
@@ -32,7 +32,8 @@ main{padding:18px;display:grid;gap:18px}
 /* Cards */
 .card{background:linear-gradient(180deg,#0f1520,#0c121a);border:1px solid #1b2635;border-radius:18px;box-shadow:0 8px 20px rgba(0,0,0,.25);padding:16px}
 .card h2{margin:.2rem 0 0.6rem;font-size:16px;letter-spacing:.2px}
-#slidesCard{padding:8px}
+#slidesCard{padding:8px;height:100%;display:flex}
+#slidesCard #presentation{flex:1}
 
 /* Typo & helpers */
 .muted{color:var(--muted)}
@@ -118,7 +119,7 @@ pre{white-space:pre-wrap;word-wrap:break-word}
 .dots{display:flex;gap:6px}
 .dot{width:8px;height:8px;border-radius:999px;background:#23354d;border:1px solid #2b415f}
 .dot.active{background:#54b6cf}
-.page{position:relative;background:#0c121a;border:1px solid #1b2635;border-radius:18px;min-height:520px;padding:12px;overflow:hidden}
+.page{position:relative;background:#0c121a;border:1px solid #1b2635;border-radius:18px;min-height:520px;height:100%;padding:12px;overflow:hidden}
 .page .content{position:relative;z-index:1}
 .page canvas.whiteboard{position:absolute;inset:0;z-index:6; pointer-events:none;}
 /* Drawing cursor and pointer activation only when ON */
