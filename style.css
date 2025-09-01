@@ -16,10 +16,8 @@ footer{padding:10px 0 18px}
 .wrap{display:grid;grid-template-rows:auto 1fr auto;min-height:100%}
 
 /* Header */
-header{display:flex;flex-direction:column;gap:8px;padding:14px 18px;border-bottom:1px solid #1e2a39;background:linear-gradient(180deg,#0f1622,#0c111a);position:relative}
-.header-main{display:flex;align-items:center;gap:16px}
-header h1{font-size:18px;margin:0;letter-spacing:.3px}
-header .badge{font-size:12px;background:var(--chip);padding:4px 8px;border-radius:999px;color:var(--muted)}
+header{display:flex;align-items:center;gap:8px;padding:14px 18px;border-bottom:1px solid #1e2a39;background:linear-gradient(180deg,#0f1622,#0c111a);position:relative}
+.header-sep{width:1px;height:32px;background:#1e2a39;margin:0 8px}
 .header-user{display:flex;align-items:center;gap:8px;font-size:20px}
 .header-user .emoji{font-size:28px}
 .header-user .name{font-weight:600;font-size:20px}
@@ -34,6 +32,7 @@ main{padding:18px;display:grid;gap:18px}
 /* Cards */
 .card{background:linear-gradient(180deg,#0f1520,#0c121a);border:1px solid #1b2635;border-radius:18px;box-shadow:0 8px 20px rgba(0,0,0,.25);padding:16px}
 .card h2{margin:.2rem 0 0.6rem;font-size:16px;letter-spacing:.2px}
+#slidesCard{padding:8px}
 
 /* Typo & helpers */
 .muted{color:var(--muted)}
@@ -114,7 +113,6 @@ details summary{cursor:pointer;color:#9ac6ff}
 pre{white-space:pre-wrap;word-wrap:break-word}
 
 /* Pages & whiteboard */
-.page-shell{position:relative}
 .pages-nav{display:flex;align-items:center;gap:8px;position:fixed;bottom:18px;left:18px;opacity:.2;z-index:1000}
 .pages-nav:hover{opacity:1}
 .dots{display:flex;gap:6px}
