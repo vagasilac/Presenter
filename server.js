@@ -13,6 +13,8 @@ const PORT = Number(process.argv[2] || process.env.PORT || 8080);
 const PUBLIC_DIR = __dirname;
 const DATA_DIR = path.join(PUBLIC_DIR, 'presentations');
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
+const POLL_DIR = path.join(PUBLIC_DIR, 'polls');
+if (!fs.existsSync(POLL_DIR)) fs.mkdirSync(POLL_DIR, { recursive: true });
 
 const MIME = {
   '.html':'text/html; charset=utf-8', '.css':'text/css; charset=utf-8',
@@ -139,6 +141,70 @@ const server = http.createServer(async (req, res) => {
             res.writeHead(400, { 'content-type': 'application/json; charset=utf-8' });
             res.end(JSON.stringify({ error: 'bad json' }));
           }
+        });
+        return;
+      }
+    }
+
+    // ---- Poll storage API ----
+    if (u.pathname === '/api/polls' && req.method === 'GET') {
+      try {
+        const files = fs.readdirSync(POLL_DIR).filter(f => f.endsWith('.json')).map(f => f.replace(/\.json$/, ''));
+        res.writeHead(200, { 'content-type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify(files));
+      } catch (e) {
+        res.writeHead(500, { 'content-type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({ error: 'failed' }));
+      }
+      return;
+    }
+
+    if (u.pathname.startsWith('/api/polls/')) {
+      const name = path.basename(u.pathname.replace('/api/polls/', '')).replace(/[^a-z0-9_\-]/ig, '');
+      const file = path.join(POLL_DIR, name + '.json');
+      if (req.method === 'GET') {
+        fs.readFile(file, 'utf8', (err, data) => {
+          if (err) {
+            res.writeHead(404, { 'content-type': 'application/json; charset=utf-8' });
+            res.end(JSON.stringify({ error: 'not found' }));
+            return;
+          }
+          res.writeHead(200, { 'content-type': 'application/json; charset=utf-8' });
+          res.end(data);
+        });
+        return;
+      }
+      if (req.method === 'POST') {
+        let body = '';
+        req.on('data', chunk => { body += chunk; });
+        req.on('end', () => {
+          try {
+            JSON.parse(body);
+            fs.writeFile(file, body, 'utf8', err => {
+              if (err) {
+                res.writeHead(500, { 'content-type': 'application/json; charset=utf-8' });
+                res.end(JSON.stringify({ error: 'write failed' }));
+                return;
+              }
+              res.writeHead(200, { 'content-type': 'application/json; charset=utf-8' });
+              res.end(JSON.stringify({ ok: true }));
+            });
+          } catch (_) {
+            res.writeHead(400, { 'content-type': 'application/json; charset=utf-8' });
+            res.end(JSON.stringify({ error: 'bad json' }));
+          }
+        });
+        return;
+      }
+      if (req.method === 'DELETE') {
+        fs.unlink(file, err => {
+          if (err) {
+            res.writeHead(500, { 'content-type': 'application/json; charset=utf-8' });
+            res.end(JSON.stringify({ error: 'delete failed' }));
+            return;
+          }
+          res.writeHead(200, { 'content-type': 'application/json; charset=utf-8' });
+          res.end(JSON.stringify({ ok: true }));
         });
         return;
       }

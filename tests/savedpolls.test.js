@@ -8,32 +8,63 @@ test('index.html includes Saved polls section without separate tab', () => {
   assert.ok(!/data-tab="saved"/.test(html));
 });
 
-test('saved polls save and load from localStorage', () => {
+test('saved polls save and load via API', async () => {
   const store = {};
-  global.localStorage = {
-    getItem: k => (k in store ? store[k] : null),
-    setItem: (k, v) => { store[k] = String(v); },
-    removeItem: k => { delete store[k]; },
-    clear: () => { for (const k in store) delete store[k]; }
+  global.fetch = async (url, opts={}) => {
+    const method = (opts.method||'GET').toUpperCase();
+    const u = new URL(url, 'http://localhost');
+    if(u.pathname === '/api/polls' && method === 'GET'){
+      return new Response(JSON.stringify(Object.keys(store)), { status:200, headers:{'content-type':'application/json'} });
+    }
+    if(u.pathname.startsWith('/api/polls/')){
+      const id = u.pathname.split('/').pop();
+      if(method === 'POST'){
+        store[id] = JSON.parse(opts.body);
+        return new Response(JSON.stringify({ok:true}), { status:200, headers:{'content-type':'application/json'} });
+      }
+      if(method === 'GET'){
+        if(!(id in store)) return new Response('nf',{status:404});
+        return new Response(JSON.stringify(store[id]), { status:200, headers:{'content-type':'application/json'} });
+      }
+    }
+    return new Response('bad', {status:400});
   };
+  delete require.cache[require.resolve('../savedPolls.js')];
   const SavedPolls = require('../savedPolls.js');
-  localStorage.clear();
-  SavedPolls.savePoll({ id: '1', q: 'Example?', type: 'tf' });
-  const arr = SavedPolls.loadSavedPolls();
+  await SavedPolls.savePoll({ id: '1', q: 'Example?', type: 'tf' });
+  const arr = await SavedPolls.loadSavedPolls();
   assert.strictEqual(arr.length, 1);
   assert.strictEqual(arr[0].q, 'Example?');
 });
 
-test('renderSavedPolls calls start callback', () => {
+test('renderSavedPolls calls start callback', async () => {
   const store = {};
-  global.localStorage = {
-    getItem: k => (k in store ? store[k] : null),
-    setItem: (k, v) => { store[k] = String(v); },
-    clear: () => { for (const k in store) delete store[k]; }
+  global.fetch = async (url, opts={}) => {
+    const method = (opts.method||'GET').toUpperCase();
+    const u = new URL(url, 'http://localhost');
+    if(u.pathname === '/api/polls' && method === 'GET'){
+      return new Response(JSON.stringify(Object.keys(store)), { status:200, headers:{'content-type':'application/json'} });
+    }
+    if(u.pathname.startsWith('/api/polls/')){
+      const id = u.pathname.split('/').pop();
+      if(method === 'POST'){
+        store[id] = JSON.parse(opts.body);
+        return new Response(JSON.stringify({ok:true}), { status:200, headers:{'content-type':'application/json'} });
+      }
+      if(method === 'GET'){
+        if(!(id in store)) return new Response('nf',{status:404});
+        return new Response(JSON.stringify(store[id]), { status:200, headers:{'content-type':'application/json'} });
+      }
+      if(method === 'DELETE'){
+        delete store[id];
+        return new Response(JSON.stringify({ok:true}),{status:200,headers:{'content-type':'application/json'}});
+      }
+    }
+    return new Response('bad', {status:400});
   };
+  delete require.cache[require.resolve('../savedPolls.js')];
   const SavedPolls = require('../savedPolls.js');
-  localStorage.clear();
-  SavedPolls.savePoll({ id: '1', q: 'Example?', type: 'tf' });
+  await SavedPolls.savePoll({ id: '1', q: 'Example?', type: 'tf' });
 
   const container = {
     _html: '',
@@ -64,7 +95,7 @@ test('renderSavedPolls calls start callback', () => {
   };
 
   let started = false;
-  SavedPolls.renderSavedPolls(container, () => { started = true; });
+  await SavedPolls.renderSavedPolls(container, () => { started = true; });
   container.querySelectorAll('button.start')[0].click();
   assert.strictEqual(started, true);
 });
