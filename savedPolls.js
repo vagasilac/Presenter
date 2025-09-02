@@ -1,16 +1,39 @@
 (function(global){
-  function loadSavedPolls(){
-    try{ return JSON.parse(localStorage.getItem('savedPolls')||'[]'); }
-    catch(_){ return []; }
+  async function loadSavedPolls(){
+    try{
+      const res = await fetch('/api/polls');
+      if(!res.ok) return [];
+      const names = await res.json();
+      const polls = [];
+      for(const n of names){
+        try{
+          const r = await fetch('/api/polls/'+encodeURIComponent(n));
+          if(r.ok){
+            const p = await r.json();
+            polls.push(p);
+          }
+        }catch(_){ }
+      }
+      return polls;
+    }catch(_){ return []; }
   }
-  function savePoll(poll){
-    const arr = loadSavedPolls();
-    arr.push(poll);
-    localStorage.setItem('savedPolls', JSON.stringify(arr));
+  async function savePoll(poll){
+    if(!poll || !poll.id) return;
+    try{
+      await fetch('/api/polls/'+encodeURIComponent(poll.id), {
+        method:'POST',
+        headers:{'content-type':'application/json'},
+        body: JSON.stringify(poll)
+      });
+    }catch(_){ }
   }
-  function renderSavedPolls(container, startCb){
+  async function deletePoll(id){
+    try{ await fetch('/api/polls/'+encodeURIComponent(id), { method:'DELETE' }); }
+    catch(_){ }
+  }
+  async function renderSavedPolls(container, startCb){
     if(!container) return;
-    const polls = loadSavedPolls();
+    const polls = await loadSavedPolls();
     if(!polls.length){
       container.innerHTML = 'No saved polls.';
       return;
@@ -28,11 +51,10 @@
       });
     });
     container.querySelectorAll('button.delete').forEach(btn=>{
-      btn.addEventListener('click', (ev)=>{
+      btn.addEventListener('click', async (ev)=>{
         ev.preventDefault();
-        const idx = Number(btn.dataset.i);
-        polls.splice(idx,1);
-        localStorage.setItem('savedPolls', JSON.stringify(polls));
+        const poll = polls[Number(btn.dataset.i)];
+        await deletePoll(poll.id);
         renderSavedPolls(container,startCb);
       });
     });

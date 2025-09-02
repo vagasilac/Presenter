@@ -287,7 +287,7 @@ function connectWS(){ const url=$('#wsUrl')?.value?.trim(); if(!url) return toas
   const sendBtn = $('#sendPoll');
   if(sendBtn) sendBtn.addEventListener('click',()=>{ const poll=buildPoll(); if(!poll) return; startSaved(poll); });
   const saveBtn = $('#savePoll');
-  if(saveBtn) saveBtn.addEventListener('click',()=>{ const poll=buildPoll(); if(!poll) return; SavedPolls.savePoll(poll); SavedPolls.renderSavedPolls($('#savedList'), startSaved); toast('Poll saved'); });
+  if(saveBtn) saveBtn.addEventListener('click', async ()=>{ const poll=buildPoll(); if(!poll) return; await SavedPolls.savePoll(poll); await SavedPolls.renderSavedPolls($('#savedList'), startSaved); toast('Poll saved'); });
   SavedPolls.renderSavedPolls($('#savedList'), startSaved);
 })();
 

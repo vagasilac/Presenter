@@ -64,3 +64,25 @@ test('presentation save and load', async () => {
   const file = path.join(__dirname, '..', 'presentations', 'testpres.json');
   if (fs.existsSync(file)) fs.unlinkSync(file);
 });
+
+test('poll save and load', async () => {
+  const poll = { id: 'testpoll', q: 'Example?', type: 'tf', choices: null, timed: 0, correct: null, multi: false, allowChange: false, maxWords: 3, maxChars: 120, score: false };
+  const saveRes = await fetch(`http://localhost:${PORT}/api/polls/${poll.id}`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(poll)
+  });
+  assert.strictEqual(saveRes.status, 200);
+
+  const loadRes = await fetch(`http://localhost:${PORT}/api/polls/${poll.id}`);
+  assert.strictEqual(loadRes.status, 200);
+  const loaded = await loadRes.json();
+  assert.strictEqual(loaded.q, 'Example?');
+
+  const listRes = await fetch(`http://localhost:${PORT}/api/polls`);
+  const list = await listRes.json();
+  assert.ok(list.includes('testpoll'));
+
+  const file = path.join(__dirname, '..', 'polls', 'testpoll.json');
+  if (fs.existsSync(file)) fs.unlinkSync(file);
+});
