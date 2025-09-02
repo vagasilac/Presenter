@@ -515,12 +515,7 @@ $('#qaSend')?.addEventListener('click',()=>{ const txt = $('#qaInput').value.tri
     if(!isLabel){
       swatch.addEventListener('click', e=>{
         e.preventDefault();
-        if (typeof input.showPicker === 'function') {
-          const res = input.showPicker();
-          if(res && typeof res.catch === 'function') res.catch(()=>input.click());
-        } else {
-          input.click();
-        }
+        input.click();
       });
     }
     function sync(){
