@@ -515,7 +515,10 @@ $('#qaSend')?.addEventListener('click',()=>{ const txt = $('#qaInput').value.tri
     if(!isLabel){
       swatch.addEventListener('click', e=>{
         e.preventDefault();
+        const wasDisabled = input.disabled;
+        if(wasDisabled) input.disabled = false;
         input.click();
+        if(wasDisabled) input.disabled = true;
       });
     }
     function sync(){
