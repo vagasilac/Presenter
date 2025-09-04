@@ -67,6 +67,7 @@ main{padding:18px;display:grid;gap:18px;grid-template-rows:1fr}
 /* Inputs & buttons */
 .row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 input,select,button{background:#0e1824;border:1px solid #1e2c3e;color:var(--text);border-radius:12px;padding:10px 12px;font-size:14px;outline:none}
+select{padding:7px 12px}
 button{cursor:pointer;transition:transform .05s ease,opacity .2s}
 button:hover{opacity:.95}
 .pill{border-radius:999px}
