@@ -1,4 +1,4 @@
-/* Lean Training — Presenter app (v7.5)
+/* Lean Training ��� Presenter app (v7.5)
    Fixes:
    - Buttons clickable (whiteboard no-pointer until ON)
    - Always-on Mini-QR renders via server /qr and is resizable
@@ -36,6 +36,15 @@ let AVATAR = localStorage.getItem('avatar') || '';
     const host = location.hostname || 'localhost';
     const port = location.port || '8080';
     const ws = $('#wsUrl'); if (ws) ws.value = `ws://${host}:${port}`;
+    // Minimize header to only emoji + anonym name + room
+    try{ document.querySelector('.tabs')?.classList.add('hidden'); }catch(_){ }
+    try{ document.getElementById('textToolbar')?.classList.add('hidden'); }catch(_){ }
+    try{ document.getElementById('fileToolbar')?.classList.add('hidden'); }catch(_){ }
+    // Show only room chip until user joins
+    try{ const hc=document.getElementById('headerClient'); if(hc){ hc.innerHTML=`<span class="chip mono">${ROOM}</span>`; hc.classList.remove('hidden'); } }catch(_){ }
+    // Hide slide navigation and whiteboard controls on client
+    try{ document.getElementById('navControls')?.classList.add('hidden'); }catch(_){ }
+    try{ document.getElementById('wbFab')?.classList.add('hidden'); document.getElementById('wbPanel')?.classList.add('hidden'); document.getElementById('wbIndicator')?.classList.remove('on'); document.body.classList.remove('ink-on','wb-open'); }catch(_){ }
   }
 })();
 
@@ -60,7 +69,7 @@ function syncSessionHints(){
   const mini = $('#miniQR'); if(!mini) return;
   if (ROLE === 'client') { mini.style.display='none'; return; } // host-only QR
 
-  // Disable native handle (bottom-right) — we implement our own bottom-left handle
+  // Disable native handle (bottom-right) ��� we implement our own bottom-left handle
   
 
   // Ensure <img> and a custom bottom-left handle element
@@ -97,7 +106,7 @@ function syncSessionHints(){
     }catch(_){ mini.style.width='110px'; mini.style.height='110px'; }
   }
 
-  // Custom BL resize behaviour — element is anchored top-right (via CSS)
+  // Custom BL resize behaviour ��� element is anchored top-right (via CSS)
   function blResizeStart(ev){ ev.preventDefault(); ev.stopPropagation();
     const startX = ev.clientX; const startY = ev.clientY;
     const rect0 = mini.getBoundingClientRect();
@@ -218,7 +227,7 @@ function renderParticipants(){
   const entries=Object.values(rtState.scores);
   count.textContent=String(entries.length);
   if(!entries.length){ list.textContent='No participants yet.'; return; }
-  list.innerHTML=entries.map(e=>`<div class="chip">${e.avatar||'🙂'} ${e.name||'Guest'}</div>`).join(' ');
+  list.innerHTML=entries.map(e=>`<div class="chip">${e.avatar||'����'} ${e.name||'Guest'}</div>`).join(' ');
 }
 
 function send(obj){ if(!WS||WS.readyState!==1) return; WS.send(JSON.stringify(obj)); }
@@ -228,27 +237,45 @@ function handle(msg){
   switch(msg.t){
     case 'hello': break;
     case 'announce': addClient(msg.id,msg.name,msg.avatar); break;
-    case 'poll': rtState.currentPoll=msg.poll; rtState.answers={}; renderClientPoll(); renderResults(); startTimer(msg.poll); break;
+    case 'poll': {
+      rtState.currentPoll=msg.poll; rtState.answers={};
+      if(ROLE==='host'){
+        renderResults();
+        startTimer(msg.poll);
+      } else {
+        rtState.timeLeft = msg.poll?.timed || 0;
+        updateTimerBar();
+        try{ hideJoinUI(); }catch(_){ }
+      }
+      renderClientPoll();
+      break;
+    }
+    case 'tick': {
+      const before = rtState.timeLeft|0;
+      rtState.timeLeft = Math.max(0, Number(msg.left)||0);
+      updateTimerBar();
+      break;
+    }
     case 'answer': rtState.answers[msg.id]=msg.answer; renderResults(); break;
     case 'scores': rtState.scores=msg.scores||rtState.scores; renderLeader(); renderParticipants(); break;
     case 'reset': rtState.scores={}; renderLeader(); renderParticipants(); break;
     case 'react': rtState.reactions[msg.emoji]=(rtState.reactions[msg.emoji]||0)+1; renderReactions(); showReactionBubble(msg.emoji); send({t:'react_update', room:ROOM, reactions:rtState.reactions}); break;
     case 'react_update': rtState.reactions = msg.reactions || rtState.reactions; renderReactions(); break;
     case 'roster': setRoster(msg.avatars || []); break;
-    case 'avatar_conflict': toast('Avatar already taken — please pick another one.'); localStorage.removeItem('joined'); showJoinUI(); break;
+    case 'avatar_conflict': toast('Avatar already taken ��� please pick another one.'); localStorage.removeItem('joined'); showJoinUI(); break;
   }
 }
 
-function addClient(id,name,avatar){ if(!rtState.scores[id]) rtState.scores[id]={name,points:0,avatar:avatar||'🙂'}; renderParticipants(); }
+function addClient(id,name,avatar){ if(!rtState.scores[id]) rtState.scores[id]={name,points:0,avatar:avatar||'����'}; renderParticipants(); }
 
 renderParticipants();
 
 function connectWS(){ const url=$('#wsUrl')?.value?.trim(); if(!url) return toast('Enter WebSocket URL');
-  $('#connState').textContent='connecting…';
+  $('#connState').textContent='connecting�ǎ';
   try{ WS=new WebSocket(url);}catch(e){ $('#connState').textContent='disconnected'; return toast('Invalid WS URL') }
   WS.onopen=()=>{ $('#connState').textContent='connected'; send({t:'hello',room:ROOM,role:ROLE,name:NAME});
     if(ROLE==='client' && (localStorage.getItem('joined')==='1')){
-      AVATAR = localStorage.getItem('avatar') || '🙂';
+      AVATAR = localStorage.getItem('avatar') || '����';
       NAME = localStorage.getItem('name') || genCodeName(AVATAR);
       CLIENT_ID = localStorage.getItem('clientId') || CLIENT_ID;
       send({t:'announce',room:ROOM,id:CLIENT_ID,name:NAME,avatar:AVATAR});
@@ -268,6 +295,16 @@ function connectWS(){ const url=$('#wsUrl')?.value?.trim(); if(!url) return toas
   const choicesWrap=$('#choicesWrap');
   const multiWrap=$('#multiWrap');
   const savedAcc=$('#savedAcc'), createAcc=$('#createAcc');
+  const sendBtn = $('#sendPoll');
+  const saveBtn = $('#savePoll');
+  const pollQ=$('#pollQ');
+  const correctEnable=$('#correctEnable');
+  const correctKey=$('#correctKey');
+  const imgInput=$('#pollImg');
+  const imgPrev=$('#pollImgPrev');
+  const imgClear=$('#pollImgClear');
+  let pollImgData=null;
+  let editingPollId=null;
   if(savedAcc && createAcc){
     savedAcc.addEventListener('toggle',()=>{ if(savedAcc.open) createAcc.open=false; });
     createAcc.addEventListener('toggle',()=>{ if(createAcc.open) savedAcc.open=false; });
@@ -275,20 +312,79 @@ function connectWS(){ const url=$('#wsUrl')?.value?.trim(); if(!url) return toas
   function syncPollType(){ const v=t.value; if(choicesWrap) choicesWrap.style.display=(v==='mc')?'block':'none'; if(multiWrap) multiWrap.style.display=(v==='mc')?'inline-flex':'none'; }
   t.addEventListener('change',syncPollType); syncPollType();
   function buildPoll(){
-    const type=$('#pollType').value; const q=$('#pollQ').value.trim(); if(!q){ toast('Enter a question'); return null; }
+    const type=$('#pollType').value; const q=($('#pollQ').value||'').trim(); if(!q){ toast('Enter a question'); return null; }
     let choices=null; if(type==='mc'){ choices=[...$$('#choicesWrap .choice')].map(i=>i.value).filter(Boolean); if(choices.length<2){ toast('Need 2+ choices'); return null; } }
     const timed=$('#timed').checked? Number($('#secs').value||20):0;
-    const correct=$('#correctEnable').checked? $('#correctKey').value.trim():null;
-    return { id:uid(), type, q, choices, timed, correct, multi: $('#multiMC').checked, allowChange: $('#allowChange').checked, maxWords: Number($('#wcLimit').value||3), maxChars: Number($('#openChars').value||120), score: $('#scoreEnable').checked };
+    const correct=$('#correctEnable').checked? ($('#correctKey').value||'').trim():null;
+    return { id:uid(), type, q, choices, timed, correct, multi: $('#multiMC').checked, allowChange: $('#allowChange').checked, maxWords: Number($('#wcLimit').value||3), maxChars: Number($('#openChars').value||120), score: $('#scoreEnable').checked, img: pollImgData };
   }
-  function startSaved(poll){
-    rtState.currentPoll=poll; rtState.answers={}; startTimer(poll); renderResults(); send({t:'poll',room:ROOM,poll});
+  function startSaved(poll){ rtState.currentPoll=poll; rtState.answers={}; startTimer(poll); renderResults(); send({t:'poll',room:ROOM,poll}); }
+
+  // Update + Cancel controls (created dynamically)
+  let updateBtn=null, cancelBtn=null;
+  function ensureEditButtons(){
+    if(updateBtn && cancelBtn) return;
+    const row = sendBtn?.parentElement || saveBtn?.parentElement || t.parentElement;
+    if(!row) return;
+    updateBtn=document.createElement('button'); updateBtn.id='updatePoll'; updateBtn.className='pill'; updateBtn.textContent='Update poll'; updateBtn.style.display='none';
+    cancelBtn=document.createElement('button'); cancelBtn.id='cancelEdit'; cancelBtn.className='pill ghost'; cancelBtn.textContent='Cancel'; cancelBtn.style.display='none';
+    row.appendChild(updateBtn); row.appendChild(cancelBtn);
+    updateBtn.addEventListener('click', async ()=>{
+      const built=buildPoll(); if(!built) return; built.id = editingPollId || built.id;
+      await SavedPolls.savePoll(built);
+      await SavedPolls.renderSavedPolls($('#savedList'), startSaved);
+      toast('Poll updated');
+      endEdit();
+    });
+    cancelBtn.addEventListener('click', ()=>{ endEdit(); toast('Edit cancelled'); });
   }
-  const sendBtn = $('#sendPoll');
+  function fillUIFromPoll(p){
+    if(!p) return;
+    t.value=p.type||'mc'; syncPollType();
+    if(pollQ) pollQ.value=p.q||'';
+    if(p.type==='mc'){
+      const inputs=$$('#choicesWrap .choice');
+      const arr=(p.choices||[]).slice(0,inputs.length);
+      inputs.forEach((inp,idx)=>{ inp.value = arr[idx]||''; });
+    }
+    $('#timed').checked = !!(p.timed&&Number(p.timed)>0);
+    $('#secs').value = String(p.timed||20);
+    if(correctEnable){ correctEnable.checked = p.correct!=null; }
+    if(correctKey){ correctKey.value = p.correct!=null? String(p.correct) : ''; }
+    $('#multiMC').checked = !!p.multi;
+    $('#allowChange').checked = !!p.allowChange;
+    $('#wcLimit').value = String(p.maxWords||3);
+    $('#openChars').value = String(p.maxChars||120);
+    $('#scoreEnable').checked = !!p.score;
+    // Image
+    pollImgData = p.img || null;
+    if(imgPrev){ if(pollImgData){ imgPrev.src=pollImgData; imgPrev.style.display='block'; } else { imgPrev.src=''; imgPrev.style.display='none'; } }
+    if(imgInput) imgInput.value='';
+  }
+  function beginEdit(p){
+    editingPollId = p?.id||null;
+    if(createAcc){ createAcc.open=true; } if(savedAcc){ savedAcc.open=false; }
+    ensureEditButtons();
+    if(saveBtn) saveBtn.style.display='none';
+    if(updateBtn) updateBtn.style.display='';
+    if(cancelBtn) cancelBtn.style.display='';
+    fillUIFromPoll(p);
+  }
+  function endEdit(){
+    editingPollId=null;
+    if(saveBtn) saveBtn.style.display='';
+    if(updateBtn) updateBtn.style.display='none';
+    if(cancelBtn) cancelBtn.style.display='none';
+    // do not clear fields; user may keep creating new
+  }
+  window.BeginPollEdit = beginEdit;
+
   if(sendBtn) sendBtn.addEventListener('click',()=>{ const poll=buildPoll(); if(!poll) return; startSaved(poll); });
-  const saveBtn = $('#savePoll');
   if(saveBtn) saveBtn.addEventListener('click', async ()=>{ const poll=buildPoll(); if(!poll) return; await SavedPolls.savePoll(poll); await SavedPolls.renderSavedPolls($('#savedList'), startSaved); toast('Poll saved'); });
   SavedPolls.renderSavedPolls($('#savedList'), startSaved);
+  // Image handlers
+  if(imgInput){ imgInput.addEventListener('change',()=>{ const f=imgInput.files && imgInput.files[0]; if(!f){ pollImgData=null; if(imgPrev) imgPrev.style.display='none'; return; } const reader=new FileReader(); reader.onload=e=>{ pollImgData=e.target.result; if(imgPrev){ imgPrev.src=pollImgData; imgPrev.style.display='block'; } }; reader.readAsDataURL(f); }); }
+  if(imgClear){ imgClear.addEventListener('click',()=>{ pollImgData=null; if(imgPrev){ imgPrev.src=''; imgPrev.style.display='none'; } if(imgInput) imgInput.value=''; }); }
 })();
 
 function startTimer(poll){
@@ -307,9 +403,9 @@ function startTimer(poll){
     }
   },1000);
 }
-function updateTimerBar(){ const total=(rtState.currentPoll&&rtState.currentPoll.timed)||0; const pct=total? Math.max(0,(rtState.timeLeft/total)*100):0; const el=$('#timerBar'); if(el) el.style.width=pct+'%'; }
+function updateTimerBar(){ const total=(rtState.currentPoll&&rtState.currentPoll.timed)||0; const pct=total? Math.max(0,(rtState.timeLeft/total)*100):0; const el=$('#timerBar'); if(el) el.style.width=pct+'%'; const el2=$('#modalTimerBar'); if(el2) el2.style.width=pct+'%'; }
 
-function renderResults(){ const area=$('#resultsArea'); const poll=rtState.currentPoll; if(!area) return; if(!poll){ area.textContent='No active poll'; return }
+function renderResults(){ const hosts=[$('#resultsArea'), $('#modalResultsArea')].filter(Boolean); const poll=rtState.currentPoll; if(!hosts.length) return; if(!poll){ hosts.forEach(h=>h.textContent='No active poll'); return }
   const answers=rtState.answers; let html=`<div><div class="muted">${poll.q}</div>`;
   function countMatch(v){ return Object.values(answers).filter(x=>x===v || (Array.isArray(x)&&x.includes(v))).length }
   if(poll.type==='mc'){ (poll.choices||[]).forEach((c,idx)=>{ const key=String.fromCharCode(65+idx); const n=countMatch(key); html+=bar(`${key}. ${c}`,n) }); }
@@ -334,11 +430,11 @@ function renderResults(){ const area=$('#resultsArea'); const poll=rtState.curre
     if(poll.correct!=null && rtState.pollFinished) html+=`<div class="mt8 mini">Correct: ${poll.correct}</div>`;
   }
   else { html += '<div class="mini muted">Type not supported yet on host results.</div>'; }
-  html+='</div>'; area.innerHTML=html;
+  html+='</div>'; hosts.forEach(h=>h.innerHTML=html);
   function bar(label,n){ return `<div class="mt8"><div class="row"><div class="chip">${label}</div><div class="right mini muted">${n}</div></div><div class="progress"><div style="width:${Math.min(100,n*14)}%"></div></div></div>` }
 }
 
-function renderLeader(){ const t=$('#leaderTable'); if(!t) return; const rows=Object.entries(rtState.scores).sort((a,b)=>b[1].points-a[1].points); let html='<tr><td>#</td><td>Name</td><td>Points</td></tr>'; rows.forEach(([id,info],i)=>{ const av=(info&&info.avatar)||'🙂'; html+=`<tr><td>${i+1}</td><td>${av} ${(info&&info.name)||id}</td><td>${(info&&info.points)|0}</td></tr>`; }); t.innerHTML=html }
+function renderLeader(){ const t=$('#leaderTable'); if(!t) return; const rows=Object.entries(rtState.scores).sort((a,b)=>b[1].points-a[1].points); let html='<tr><td>#</td><td>Name</td><td>Points</td></tr>'; rows.forEach(([id,info],i)=>{ const av=(info&&info.avatar)||'����'; html+=`<tr><td>${i+1}</td><td>${av} ${(info&&info.name)||id}</td><td>${(info&&info.points)|0}</td></tr>`; }); t.innerHTML=html }
 
 function finalizePoll(){
   const poll = rtState.currentPoll;
@@ -360,13 +456,13 @@ function finalizePoll(){
       if(d < minDiff) minDiff = d;
     }
     for(const [id,ans] of Object.entries(rtState.answers)){
-      if(!rtState.scores[id]) rtState.scores[id]={name:'Guest',points:0,avatar:'🙂'};
+      if(!rtState.scores[id]) rtState.scores[id]={name:'Guest',points:0,avatar:'����'};
       const d = Math.abs(Number(ans) - Number(correctKey));
       if(d === minDiff) rtState.scores[id].points += base;
     }
   } else {
     for(const [id,ans] of Object.entries(rtState.answers)){
-      if(!rtState.scores[id]) rtState.scores[id]={name:'Guest',points:0,avatar:'🙂'};
+      if(!rtState.scores[id]) rtState.scores[id]={name:'Guest',points:0,avatar:'����'};
       let ok=true;
       if(correctKey!=null){
         ok = String(ans).toLowerCase()===String(correctKey).toLowerCase();
@@ -377,6 +473,40 @@ function finalizePoll(){
   renderLeader();
   send({t:'scores',room:ROOM,scores:rtState.scores});
   toast('Poll finished. Scores updated.');
+}
+// Expose for slide modal integration
+window.StartPoll = function(poll){
+  if(!poll) return; rtState.currentPoll=poll; rtState.answers={}; startTimer(poll); renderResults(); send({t:'poll',room:ROOM,poll});
+};
+window.FinishPoll = finalizePoll;
+
+// Simple modal to preview/start/finish a poll from slides
+function showPollModal(poll){
+  try{ const old=$('#pollModal'); if(old) old.remove(); }catch(_){ }
+  const wrap=document.createElement('div');
+  wrap.id='pollModal';
+  wrap.className='modal';
+  wrap.innerHTML = `
+    <div class="modal-content card">
+      <div class="row" style="justify-content:space-between;align-items:center">
+        <h2 style="margin:0">Poll</h2>
+        <button id="pollModalClose" class="pill ghost">✕</button>
+      </div>
+      <div class="muted" style="margin-top:6px">${(poll&&poll.q)||''}</div>
+      ${poll&&poll.img ? `<img src="${poll.img}" alt="Poll image" class="mt8" style="max-height:160px;border-radius:8px;border:1px solid #233045"/>` : ''}
+      <div class="progress mt8"><div id="modalTimerBar" style="width:0%"></div></div>
+      <div id="modalResultsArea" class="mt12 muted">No active poll</div>
+      <div class="row mt12" style="gap:8px">
+        <button id="pollModalStart" class="pill primary">Start</button>
+        <button id="pollModalFinish" class="pill">Finish</button>
+      </div>
+    </div>`;
+  document.body.appendChild(wrap);
+  const stop = ()=>wrap.remove();
+  wrap.addEventListener('click',(e)=>{ if(e.target===wrap) stop(); });
+  $('#pollModalClose')?.addEventListener('click', stop);
+  $('#pollModalStart')?.addEventListener('click',()=>{ try{ window.StartPoll && window.StartPoll(poll); renderResults(); updateTimerBar(); }catch(_){ } });
+  $('#pollModalFinish')?.addEventListener('click',()=>{ try{ window.FinishPoll && window.FinishPoll(); renderResults(); }catch(_){ } });
 }
 $('#resetScores')?.addEventListener('click',()=>{ rtState.scores={}; renderLeader(); renderParticipants(); send({t:'reset',room:ROOM}) });
 
@@ -396,7 +526,7 @@ function showReactionBubble(emoji){
 }
 
 // ---------- Q&A (host) ----------
-function renderQA(){ const div = $('#qaList'); if(!div) return; const arr = Object.entries(rtState.qa).sort((a,b)=> (b[1].votes|0)-(a[1].votes|0)); div.innerHTML = arr.length ? arr.map(([qid,q])=>`<div class="row" style="gap:8px;margin:6px 0"><span>${q.avatar||'🙂'}</span><span>${q.text}</span><span class="chip">▲ ${q.votes|0}</span></div>`).join('') : 'No questions yet.'; }
+function renderQA(){ const div = $('#qaList'); if(!div) return; const arr = Object.entries(rtState.qa).sort((a,b)=> (b[1].votes|0)-(a[1].votes|0)); div.innerHTML = arr.length ? arr.map(([qid,q])=>`<div class="row" style="gap:8px;margin:6px 0"><span>${q.avatar||'����'}</span><span>${q.text}</span><span class="chip">Ծ- ${q.votes|0}</span></div>`).join('') : 'No questions yet.'; }
 function handleQA(msg){ if(msg.t==='qa_new'){ const id = msg.qid || uid(); rtState.qa[id] = {text:msg.text, from:msg.name, avatar:msg.avatar, votes:0}; send({t:'qa_update', room:ROOM, qa:rtState.qa}); renderQA(); } if(msg.t==='qa_vote'){ const id = msg.qid; if(rtState.qa[id]) rtState.qa[id].votes=(rtState.qa[id].votes||0)+1; send({t:'qa_update', room:ROOM, qa:rtState.qa}); renderQA(); } if(msg.t==='qa_update'){ rtState.qa = msg.qa||rtState.qa; renderQA(); } }
 
 // ---------- Client-side rendering ----------
@@ -410,19 +540,35 @@ function renderClientPoll(){ if(ROLE!=='client') return; const area=$('#clientAr
   else if(poll.type==='rank'){ html+='<div class="row mt8"><input id="rankInput" type="number" class="w100" placeholder="Enter number"/></div><button id="rankSend" class="pill primary mt8">Send</button>'; }
   else { html+='<div class="mini muted mt8">This question type will be supported soon.</div>'; }
   html+='</div>'; area.innerHTML=html;
-  $$('#clientArea button.pill.ghost').forEach(b=>b.onclick=()=>{ if(clientLocked && !rtState.currentPoll.allowChange) return; lockClient('Answer sent ✓'); send({t:'answer',room:ROOM,id:CLIENT_ID,pollId:poll.id,answer:b.dataset.ans}); });
-  const wcs=$('#wcSend'); if(wcs) wcs.onclick=()=>{ const raw = ($('#wcInput').value||'').trim(); if(!raw) return; let words=raw.split(/[\s,]+/).filter(Boolean).slice(0, rtState.currentPoll.maxWords||3); lockClient('Sent ✓'); send({t:'answer', room:ROOM, id:CLIENT_ID, pollId:poll.id, answer: words}); };
-  const os=$('#openSend'); if(os) os.onclick=()=>{ let txt = ($('#openInput').value||'').slice(0, rtState.currentPoll.maxChars||120); if(!txt) return; lockClient('Sent ✓'); send({t:'answer', room:ROOM, id:CLIENT_ID, pollId:poll.id, answer: txt}); };
-  const rs=$('#rankSend'); if(rs) rs.onclick=()=>{ const val=$('#rankInput').value; if(val==='') return; lockClient('Sent ✓'); send({t:'answer', room:ROOM, id:CLIENT_ID, pollId:poll.id, answer: Number(val)}); };
+  $$('#clientArea button.pill.ghost').forEach(b=>b.onclick=()=>{ if(clientLocked && !rtState.currentPoll.allowChange) return; lockClient('Answer sent ԝ�'); send({t:'answer',room:ROOM,id:CLIENT_ID,pollId:poll.id,answer:b.dataset.ans}); });
+  const wcs=$('#wcSend'); if(wcs) wcs.onclick=()=>{ const raw = ($('#wcInput').value||'').trim(); if(!raw) return; let words=raw.split(/[\s,]+/).filter(Boolean).slice(0, rtState.currentPoll.maxWords||3); lockClient('Sent ԝ�'); send({t:'answer', room:ROOM, id:CLIENT_ID, pollId:poll.id, answer: words}); };
+  const os=$('#openSend'); if(os) os.onclick=()=>{ let txt = ($('#openInput').value||'').slice(0, rtState.currentPoll.maxChars||120); if(!txt) return; lockClient('Sent ԝ�'); send({t:'answer', room:ROOM, id:CLIENT_ID, pollId:poll.id, answer: txt}); };
+  const rs=$('#rankSend'); if(rs) rs.onclick=()=>{ const val=$('#rankInput').value; if(val==='') return; lockClient('Sent ԝ�'); send({t:'answer', room:ROOM, id:CLIENT_ID, pollId:poll.id, answer: Number(val)}); };
 }
 function lockClient(msg){ clientLocked=true; const area=$('#clientArea'); if(!area) return; area.querySelectorAll('button, input').forEach(el=>el.disabled=true); toast(msg); try{ navigator.vibrate&&navigator.vibrate(20) }catch(_){} }
 
 // ---------- Anonymous join + avatars ----------
 let USED_AVATARS = new Set();
-const AVATARS = ['🙂','😀','😎','🤓','🤠','🧐','🤖','👾','👻','🎩','🧠','🦾','🪄','🐱','🐶','🦊','🐼','🐵','🐯','🦁','🐨','🦄','🐸','🐙','🐢','🐳','🦉','🦅','🦆','🦜','🐝','🦋','🐞','🦖','🐲','🐉','🔥','⚡','❄️','🌞','🌙','⭐','🌈','💎','🧊','🍀','🍉'];
+const AVATARS = ['����','���','���','���','���','���','�襾','��ſ','��Ŭ','����','���','�莿','���','���-','����','���','���-','����','��ɻ','���','����','���','��ɪ','����','����','���-','���','���','���','�莝','��ɣ','���','����','�莾','���-','����','����','���','ԣ䴪�','����','����','Ժ�','���','����','���','���','���'];
 const EMOJI_NAMES = {
-  '🙂':'Smile','😀':'Grin','😎':'Cool','🤓':'Nerd','🤠':'Cowboy','🧐':'Thinker','🤖':'Robot','👾':'Alien','👻':'Ghost','🎩':'Tophat','🧠':'Brain','🦾':'Cyborg','🪄':'Wand','🐱':'Cat','🐶':'Dog','🦊':'Fox','🐼':'Panda','🐵':'Monkey','🐯':'Tiger','🦁':'Lion','🐨':'Koala','🦄':'Unicorn','🐸':'Frog','🐙':'Octopus','🐢':'Turtle','🐳':'Whale','🦉':'Owl','🦅':'Eagle','🦆':'Duck','🦜':'Parrot','🐝':'Bee','🦋':'Butterfly','🐞':'Ladybug','🦖':'Dino','🐲':'Dragon','🐉':'Dragon','🔥':'Fire','⚡':'Bolt','❄️':'Snow','🌞':'Sun','🌙':'Moon','⭐':'Star','🌈':'Rainbow','💎':'Gem','🧊':'Ice','🍀':'Clover','🍉':'Melon'
+  '����':'Smile','���':'Grin','���':'Cool','���':'Nerd','���':'Cowboy','���':'Thinker','�襾':'Robot','��ſ':'Alien','��Ŭ':'Ghost','����':'Tophat','���':'Brain','�莿':'Cyborg','���':'Wand','���-':'Cat','����':'Dog','���':'Fox','���-':'Panda','����':'Monkey','��ɻ':'Tiger','���':'Lion','����':'Koala','���':'Unicorn','��ɪ':'Frog','����':'Octopus','����':'Turtle','���-':'Whale','���':'Owl','���':'Eagle','���':'Duck','�莝':'Parrot','��ɣ':'Bee','���':'Butterfly','����':'Ladybug','�莾':'Dino','���-':'Dragon','����':'Dragon','����':'Fire','���':'Bolt','ԣ䴪�':'Snow','����':'Sun','����':'Moon','Ժ�':'Star','���':'Rainbow','����':'Gem','���':'Ice','���':'Clover','���':'Melon'
 };
+// Rebuild emoji palette using safe Unicode escapes to avoid encoding issues
+(function(){
+  try{
+    const fixed=[
+      "\uD83D\uDE00","\uD83D\uDE03","\uD83D\uDE04","\uD83D\uDE01","\uD83D\uDE09","\uD83D\uDE0A",
+      "\uD83D\uDE0E","\uD83E\uDD2A","\uD83D\uDC7B","\uD83D\uDE80","\u26A1","\u2728",
+      "\uD83C\uDF89","\uD83C\uDF1F","\uD83D\uDC36","\uD83D\uDC31","\uD83D\uDC2E","\uD83D\uDC22",
+      "\uD83D\uDC1F","\uD83D\uDC0D","\uD83E\uDD18","\uD83D\uDC4D","\uD83D\uDC4C","\u270C",
+      "\uD83D\uDC9C","\uD83D\uDD25","\uD83C\uDF08","\uD83D\uDCA1","\uD83D\uDC7E","\uD83D\uDD2E"
+    ];
+    if(Array.isArray(AVATARS)){
+      AVATARS.length=0; fixed.forEach(e=>AVATARS.push(e));
+    }
+    if(typeof EMOJI_NAMES==='object' && EMOJI_NAMES){ Object.keys(EMOJI_NAMES).forEach(k=>delete EMOJI_NAMES[k]); }
+  }catch(_){ }
+})();
 function genCodeName(av){ const adj=['Brave','Calm','Swift','Clever','Mighty','Quiet','Sunny','Lucky','Nimble','True','Noble','Witty','Zen','Bold','Bright']; const base=EMOJI_NAMES[av]||'Friend'; const n=Math.floor(Math.random()*90)+10; return `${adj[Math.floor(Math.random()*adj.length)]}-${base}-${n}`; }
 function setRoster(list){ USED_AVATARS = new Set(list||[]); renderAvatars(); }
 function updatePreview(){ const el=$('#preview'); if(!el) return; if(!AVATAR){ el.innerHTML='<span class="muted">Pick an avatar</span>'; return; } if(!NAME) NAME = genCodeName(AVATAR); el.innerHTML=`<span class="emoji">${AVATAR}</span><span class="chip">${NAME}</span>`; }
@@ -432,8 +578,8 @@ function showJoinUI(){
   $('#joinForm').style.display='flex';
   const ch=$('#clientHeader');
   if(ch){ ch.textContent='Join'; ch.style.display='block'; }
-  $('#clientArea').style.display='none';
-  $('#reactRow').style.display='none';
+  const ca=$('#clientArea'); if(ca){ ca.style.display='none'; ca.classList.add('hidden'); }
+  const rr=$('#reactRow'); if(rr){ rr.style.display='none'; rr.classList.add('hidden'); }
   $('#qaForm').classList.add('hidden');
   $('#qaBtn')?.classList.add('hidden');
   updatePreview();
@@ -443,8 +589,8 @@ function hideJoinUI(){
   $('#joinForm').style.display='none';
   const ch=$('#clientHeader');
   if(ch){ ch.style.display='none'; }
-  $('#clientArea').style.display='block';
-  $('#reactRow').style.display='flex';
+  const ca=$('#clientArea'); if(ca){ ca.classList.remove('hidden'); ca.style.display='block'; }
+  const rr=$('#reactRow'); if(rr){ rr.classList.remove('hidden'); rr.style.display='flex'; }
   $('#qaForm').classList.add('hidden');
   $('#qaBtn')?.classList.remove('hidden');
   updateHeader();
@@ -455,7 +601,7 @@ function updateHeader(){
   const room=$('#roomBadge');
   if(ROLE==='client' && localStorage.getItem('joined')==='1'){
     if(user){
-      user.innerHTML=`<span class="emoji">${AVATAR||'🙂'}</span><span class="name">${NAME||''}</span><span class="chip mono">${ROOM}</span>`;
+      user.innerHTML=`<span class="emoji">${AVATAR||'����'}</span><span class="name">${NAME||''}</span><span class="chip mono">${ROOM}</span>`;
       user.classList.remove('hidden');
     }
     if(h1) h1.style.display='none';
@@ -468,13 +614,13 @@ function updateHeader(){
 }
 
 // Sticky join for clients
-(function(){ const wasJoined = localStorage.getItem('joined')==='1'; if (ROLE==='client' && wasJoined){ AVATAR = localStorage.getItem('avatar') || '🙂'; NAME = localStorage.getItem('name') || genCodeName(AVATAR); CLIENT_ID = localStorage.getItem('clientId') || CLIENT_ID; hideJoinUI(); }})();
+(function(){ const wasJoined = localStorage.getItem('joined')==='1'; if (ROLE==='client' && wasJoined){ AVATAR = localStorage.getItem('avatar') || '����'; NAME = localStorage.getItem('name') || genCodeName(AVATAR); CLIENT_ID = localStorage.getItem('clientId') || CLIENT_ID; hideJoinUI(); }})();
 
 // Join button
 $('#joinBtn')?.addEventListener('click', ()=>{ if(!AVATAR || USED_AVATARS.has(AVATAR)) { toast('Pick an available avatar'); return; } if(!NAME) NAME = genCodeName(AVATAR); localStorage.setItem('name', NAME); localStorage.setItem('clientId', CLIENT_ID); localStorage.setItem('avatar', AVATAR); localStorage.setItem('joined', '1'); send({t:'announce',room:ROOM,id:CLIENT_ID,name:NAME,avatar:AVATAR}); hideJoinUI(); toast(`Joined as ${AVATAR} ${NAME}`); });
 
 // Reactions (client)
-(function(){ const EMO = ['👏','👍','🎉','🤯','😅']; const bar = $('#reactBar'); if(!bar) return; bar.innerHTML = EMO.map(e=>`<button class="pill ghost" data-emo="${e}" style="font-size:18px">${e}</button>`).join(''); bar.addEventListener('click',(ev)=>{ const b=ev.target.closest('button[data-emo]'); if(!b) return; send({t:'react', room:ROOM, id:CLIENT_ID, emoji:b.dataset.emo}); }); })();
+(function(){ const EMO = ['����','��ŏ','����','�襻','���']; const bar = $('#reactBar'); if(!bar) return; bar.innerHTML = EMO.map(e=>`<button class="pill ghost" data-emo="${e}" style="font-size:18px">${e}</button>`).join(''); bar.addEventListener('click',(ev)=>{ const b=ev.target.closest('button[data-emo]'); if(!b) return; send({t:'react', room:ROOM, id:CLIENT_ID, emoji:b.dataset.emo}); }); })();
 
 // Q&A (client ask)
 $('#qaBtn')?.addEventListener('click',()=> $('#qaForm').classList.toggle('hidden'));
@@ -487,6 +633,83 @@ $('#qaSend')?.addEventListener('click',()=>{ const txt = $('#qaInput').value.tri
   if(!shell) return;
 
   const prevPage=$('#prevPage'), nextPage=$('#nextPage'), pageDots=$('#pageDots');
+  // Minimal import controls (host only)
+  (function(){
+    const nav = document.querySelector('#navControls');
+    if(ROLE==='client' || !nav) return;
+    const importSelect = document.createElement('select');
+    importSelect.id='importSelect';
+    importSelect.className='pill';
+    importSelect.style.minWidth='180px';
+    const importBtn = document.createElement('button');
+    importBtn.id='importAdd';
+    importBtn.className='pill';
+    importBtn.textContent='Add import';
+    importBtn.disabled=true;
+    nav.appendChild(importSelect);
+    nav.appendChild(importBtn);
+    let cache=[];
+    function render(){
+      importSelect.innerHTML='';
+      const ph = new Option(cache.length? 'Import app...' : 'No imports found','');
+      ph.selected=true;
+      importSelect.append(ph);
+      cache.forEach((m,i)=> importSelect.append(new Option(m.label||m.name||m.entry, String(i))));
+      importBtn.disabled = !importSelect.value;
+    }
+    async function loadImports(){
+      try{ const res=await fetch('/api/imports',{ cache:'no-store' }); if(res.ok){ cache=await res.json(); } }catch(_){ }
+      render();
+    }
+    importSelect.addEventListener('focus', loadImports);
+    importSelect.addEventListener('mousedown', loadImports);
+    importSelect.addEventListener('click', loadImports);
+    importSelect.addEventListener('change', ()=>{ importBtn.disabled=!importSelect.value; });
+    importBtn.addEventListener('click', ()=>{
+      const idx=Number(importSelect.value); if(Number.isNaN(idx)) return;
+      const meta=cache[idx]; if(!meta) return;
+      createImportSlide(meta);
+    });
+    render();
+  })();
+  // Quick Insert Poll controls in Presentation nav (host only)
+  (function(){
+    const nav = document.querySelector('#navControls');
+    if(ROLE==='client' || !nav || typeof SavedPolls==='undefined') return;
+    const pollSelect = document.createElement('select');
+    pollSelect.id='pollInsertSelect';
+    pollSelect.className='pill';
+    pollSelect.style.minWidth='220px';
+    const pollBtn = document.createElement('button');
+    pollBtn.id='pollInsertBtn';
+    pollBtn.className='pill';
+    pollBtn.textContent='Insert poll';
+    pollBtn.disabled=true;
+    nav.appendChild(pollSelect);
+    nav.appendChild(pollBtn);
+    let cache=[];
+    function render(){
+      const prevVal = pollSelect.value;
+      pollSelect.innerHTML='';
+      const ph = new Option(cache.length? 'Insert poll…' : 'No saved polls','');
+      pollSelect.append(ph);
+      cache.forEach((p,i)=> pollSelect.append(new Option((p.q||p.id||('Poll '+(i+1))).slice(0,80), String(i))));
+      // Restore previous selection if still valid; otherwise stay on placeholder
+      if(prevVal && Array.from(pollSelect.options).some(o=>o.value===prevVal)){
+        pollSelect.value = prevVal;
+      } else {
+        pollSelect.value = '';
+      }
+      pollBtn.disabled = !pollSelect.value;
+    }
+    async function loadPolls(){ try{ cache = await SavedPolls.loadSavedPolls(); }catch(_){ cache=[]; } render(); }
+    pollSelect.addEventListener('focus', loadPolls);
+    pollSelect.addEventListener('mousedown', loadPolls);
+    // Do not reload on click; it fires after selection and would reset it
+    pollSelect.addEventListener('change', ()=>{ pollBtn.disabled = !pollSelect.value; });
+    pollBtn.addEventListener('click', ()=>{ const idx = Number(pollSelect.value); if(Number.isNaN(idx)) return; const poll = cache[idx]; if(poll && typeof window.InsertPollToSlide==='function'){ window.InsertPollToSlide(poll); } });
+    render();
+  })();
   const presName=$('#presName'), presNew=$('#presNew'), presAdd=$('#presAdd'), presDup=$('#presDup'), presSave=$('#presSave'), presList=$('#presList'), presLoad=$('#presLoad');
   const buildPrev=$('#buildPrev'), buildNext=$('#buildNext'), buildInfo=$('#buildInfo'), buildEdit=$('#buildEdit'), buildClear=$('#buildClear');
   const fontSelect=$('#fontSelect'), fontSize=$('#fontSize'), fontColor=$('#fontColor'), fontColorSwatch=$('#fontColorSwatch'), textBg=$('#textBg'), textBgSwatch=$('#textBgSwatch'), textBgTransparent=$('#textBgTransparent'), imgBtn=$('#imgBtn'), textBtn=$('#textBtn'), imgInput=$('#imgInput'), deleteBtn=$('#deleteBtn');
@@ -502,6 +725,32 @@ $('#qaSend')?.addEventListener('click',()=>{ const txt = $('#qaInput').value.tri
 
   function rgbToHex(rgb){ const m=rgb.match(/\d+/g); return m ? '#'+m.slice(0,3).map(x=>Number(x).toString(16).padStart(2,'0')).join('') : '#ffffff'; }
 
+  // Expose poll insertion into the current slide (host only)
+  window.InsertPollToSlide = function(poll){
+    if(ROLE==='client') return;
+    const page=pages[current]; if(!page||!poll) return;
+    const el=document.createElement('div');
+    el.className='poll-item';
+    el.dataset.pollId=poll.id||'';
+    // Truncate label for readability
+    const q=String(poll.q||'').trim(); const short=q.length>60? (q.slice(0,57)+'…') : q;
+    el.textContent = '📊 '+short;
+    makeDraggable(el);
+    // Enforce short caption: first 15 characters + '...'
+    try{ const short15 = String(poll.q||'').trim().slice(0,15) + '...'; el.textContent = '📊 ' + short15; }catch(_){ }
+    page.appendChild(el);
+    selectEl(el);
+    toast('Poll added to slide. Double-click to start.');
+  };
+
+  // Double-click a poll item to open modal and start/finish from there
+  shell.addEventListener('dblclick', async (ev)=>{
+    const item = ev.target && ev.target.closest ? ev.target.closest('.poll-item') : null;
+    if(!item) return;
+    const id=item.dataset.pollId; if(!id) return;
+    try{ const res=await fetch('/api/polls/'+encodeURIComponent(id)); if(!res.ok) { toast('Poll not found'); return; } const poll=await res.json(); showPollModal(poll); }catch(_){ toast('Failed to load poll'); }
+  });
+
   function initColorPicker(input, swatch, onChange){
     if(!input || !swatch) return;
     let savedRange=null;
@@ -515,10 +764,7 @@ $('#qaSend')?.addEventListener('click',()=>{ const txt = $('#qaInput').value.tri
     if(!isLabel){
       swatch.addEventListener('click', e=>{
         e.preventDefault();
-        const wasDisabled = input.disabled;
-        if(wasDisabled) input.disabled = false;
         input.click();
-        if(wasDisabled) input.disabled = true;
       });
     }
     function sync(){
@@ -570,7 +816,8 @@ $('#qaSend')?.addEventListener('click',()=>{ const txt = $('#qaInput').value.tri
     redrawWB(page);
   }
   function ensureWBCanvas(page){
-    let c=page.querySelector('canvas.whiteboard');
+      if(page && ((page.dataset && page.dataset.import==='1') || page.querySelector('[data-import]'))) return;
+let c=page.querySelector('canvas.whiteboard');
     if(!c){
       c=document.createElement('canvas');
       c.className='whiteboard';
@@ -768,6 +1015,34 @@ $('#qaSend')?.addEventListener('click',()=>{ const txt = $('#qaInput').value.tri
 
   function showPage(idx){ if(idx<0||idx>=pages.length) return; pages.forEach((p,i)=>{ p.style.display = i===idx?'':'none'; if(i===idx){ const c=p.querySelector('canvas.whiteboard'); if(c) resizeCanvas(c,p); } }); current=idx; builds[current].apply(); updateDots(); }
 
+
+  function createImportSlide(meta){
+    if(!meta || !meta.url) return;
+    const page=document.createElement('div');
+    page.className='page';
+    page.style.padding='0';
+    page.dataset.import='1';
+    const content=document.createElement('div');
+    content.className='content';
+    content.setAttribute('data-import','1');
+    content.style.position='absolute';
+    content.style.inset='0';
+    const frame=document.createElement('iframe');
+    frame.className='import-frame';
+    frame.src=meta.url;
+    frame.title=(meta.label||meta.name||meta.entry||'App');
+    frame.loading='lazy';
+    frame.style.width='100%';
+    frame.style.height='100%';
+    frame.style.border='0';
+    frame.style.background='#000';
+    content.appendChild(frame);
+    page.appendChild(content);
+    shell.appendChild(page);
+    refreshPages();
+    showPage(pages.length-1);
+  }
+
   function createBlank(){ const page=document.createElement('div'); page.className='page'; const content=document.createElement('div'); content.className='content'; content.contentEditable='true'; content.innerHTML=''; page.appendChild(content); ensureWBCanvas(page); shell.appendChild(page); refreshPages(); showPage(pages.length-1); }
 
   function moveSlide(from,to){
@@ -909,6 +1184,8 @@ $('#qaSend')?.addEventListener('click',()=>{ const txt = $('#qaInput').value.tri
   loadList();
   refreshPages();
   if(!pages.length) createBlank();
+  // Re-render saved polls to reveal Insert buttons (now that InsertPollToSlide exists)
+  try{ const c=$('#savedList'); if(c && typeof SavedPolls!=='undefined'){ SavedPolls.renderSavedPolls(c, (p)=>{ try{ window.StartPoll && window.StartPoll(p); }catch(_){ } }); } }catch(_){ }
 })();
 
 // ---------- Boot ----------
@@ -928,6 +1205,6 @@ $('#qaSend')?.addEventListener('click',()=>{ const txt = $('#qaInput').value.tri
 
 
 
-/* ---- Minimal QR fallback (EmbedQR) — no CSS, canvas-only ---- */
+/* ---- Minimal QR fallback (EmbedQR) ��� no CSS, canvas-only ---- */
 (function(t){function e(t){this.mode=o,this.data=t}function n(t,e){this.typeNumber=t,this.errorCorrectLevel=e,this.modules=null,this.moduleCount=0,this.dataList=[]}function r(){this.buffer=[],this.length=0}var o=4,i={L:1,M:0,Q:3,H:2};e.prototype={getLength:function(){return this.data.length},write:function(t){for(var e=0;e<this.data.length;e++)t.put(this.data.charCodeAt(e),8)}};n.prototype={addData:function(t){this.dataList.push(new e(t))},isDark:function(t,e){if(null==this.modules)throw new Error("QR not built");return this.modules[t][e]},getModuleCount:function(){return this.moduleCount},make:function(){this.moduleCount=33,this.modules=new Array(this.moduleCount);for(var t=0;t<this.moduleCount;t++){this.modules[t]=new Array(this.moduleCount);for(var e=0;e<this.moduleCount;e++)this.modules[t][e]=null}this._pos(0,0),this._pos(this.moduleCount-7,0),this._pos(0,this.moduleCount-7),this._map(this._data())},_pos:function(t,e){for(var n=-1;n<=7;n++)if(!(t+n<=-1||this.moduleCount<=t+n))for(var r=-1;r<=7;r++)e+r<=-1||this.moduleCount<=e+r||(this.modules[t+n][e+r]=n>=0&&6>=n&&(0==r||6==r)||r>=0&&6>=r&&(0==n||6==n)||n>=2&&4>=n&&r>=2&&4>=r)},_data:function(){var t=new r;for(var e=0;e<this.dataList.length;e++){var n=this.dataList[e];t.put(4,4),t.put(n.getLength(),8),n.write(t)}for(;t.length+4<=512;)t.put(0,4);for(;t.length%8!=0;)t.put(0,1);for(var o=[],i=0;i<t.buffer.length;i++)o.push(t.buffer[i]);for(;o.length<512;)o.push(0);return o},_map:function(t){for(var e=0,n=0,r=this.moduleCount-1,o=this.moduleCount-1;o>0;o-=2)for(6==o&&o--;o>=0;o--){for(var i=0;i<2;i++)null==this.modules[o-i][r]&&(e<n&&null==this.modules[o-i][r]&&(this.modules[o-i][r]=(t[e>>3]>>(7-(7&e))&1)==1),e++);r+=-1}}};r.prototype={put:function(t,e){for(var n=0;n<e;n++)this.putBit((t>>(e-n-1)&1)==1)},putBit:function(t){var e=Math.floor(this.length/8);this.buffer.length<=e&&this.buffer.push(0),t&&(this.buffer[e]|=128>>>this.length%8),this.length++}};var u=function(t){var e=new n(4,i.L);return e.addData(t),e.make(),e};t.EmbedQR={drawCanvas:function(t,e){var n=u(t),r=e||256,o=e||256,i=document.createElement("canvas");i.width=r;i.height=o;for(var a=i.getContext("2d"),s=0;s<o;s++)for(var l=0;l<r;l++){var h=Math.floor(s*n.getModuleCount()/o),c=Math.floor(l*n.getModuleCount()/r),f=n.isDark(h,c)?0:255;a.fillStyle="rgb("+f+","+f+","+f+")",a.fillRect(l,s,1,1)}return i}}})(window);
 function qrFallbackDataURL(text, size){ try{ var c = window.EmbedQR.drawCanvas(text, size||256); return c.toDataURL('image/png'); }catch(e){ return null; } }

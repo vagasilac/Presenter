@@ -1,4 +1,4 @@
-// server.js — Single-port static server + WebSocket relay + robust QR endpoints
+// server.js ��� Single-port static server + WebSocket relay + robust QR endpoints
 // Usage: node server.js 8080
 // Needs: npm i ws qrcode
 
@@ -7,12 +7,14 @@ const fs   = require('fs');
 const path = require('path');
 const { URL } = require('url');
 const WebSocket = require('ws');
-const QRCode = require('qrcode'); // ✅ standards-compliant QR
+const QRCode = require('qrcode'); // ԝ� standards-compliant QR
 
 const PORT = Number(process.argv[2] || process.env.PORT || 8080);
 const PUBLIC_DIR = __dirname;
 const DATA_DIR = path.join(PUBLIC_DIR, 'presentations');
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
+const IMPORTS_DIR = path.join(PUBLIC_DIR, 'imports');
+if (!fs.existsSync(IMPORTS_DIR)) fs.mkdirSync(IMPORTS_DIR, { recursive: true });
 const POLL_DIR = path.join(PUBLIC_DIR, 'polls');
 if (!fs.existsSync(POLL_DIR)) fs.mkdirSync(POLL_DIR, { recursive: true });
 
@@ -27,7 +29,7 @@ const server = http.createServer(async (req, res) => {
   try {
     const u = new URL(req.url, `http://${req.headers.host}`);
 
-    // ---- Short URL: /j/<ROOM>  or  /j?room=ROOM  → /?room=ROOM&role=client
+    // ---- Short URL: /j/<ROOM>  or  /j?room=ROOM  ��� /?room=ROOM&role=client
     if (u.pathname === '/j' || u.pathname.startsWith('/j/')) {
       const room = u.pathname.startsWith('/j/') ? decodeURIComponent(u.pathname.slice(3))
                                                : (u.searchParams.get('room') || 'default');
@@ -45,7 +47,7 @@ const server = http.createServer(async (req, res) => {
       const ec     = (u.searchParams.get('ec') || 'M').toUpperCase();     // L, M, Q, H
       const border = Math.max(2, Math.min(16, parseInt(u.searchParams.get('border')||'4',10) || 4)); // quiet zone (modules)
 
-      // qrcode renders proper format/timing/alignment patterns etc. ✔
+      // qrcode renders proper format/timing/alignment patterns etc. ԝ�
       const svg = await QRCode.toString(text, {
         type: 'svg',
         errorCorrectionLevel: ec,
@@ -144,6 +146,36 @@ const server = http.createServer(async (req, res) => {
         });
         return;
       }
+    }
+
+
+    // ---- Imports discovery API ----
+    if (u.pathname === '/api/imports' && req.method === 'GET') {
+      try {
+        const apps = [];
+        const entries = fs.readdirSync(IMPORTS_DIR, { withFileTypes: true });
+        for (const entry of entries) {
+          if (entry.isDirectory()) {
+            const dirPath = require('path').join(IMPORTS_DIR, entry.name);
+            const list = fs.readdirSync(dirPath);
+            const html = list.filter(n => /\.html?$/i.test(n)).sort((a,b)=>a.localeCompare(b, undefined, {sensitivity:'base'}));
+            const entryFile = html.find(n=>/^index\.html?$/i.test(n)) || html[0];
+            if (entryFile) apps.push({ name: entry.name, entry: entryFile, label: entry.name, url: '/imports/' + encodeURIComponent(entry.name) + '/' + encodeURIComponent(entryFile) });
+            continue;
+          }
+          if (entry.isFile() && /\.html?$/i.test(entry.name)) {
+            const base = entry.name.replace(/\.[^.]+$/, '') || entry.name;
+            apps.push({ name: base, entry: entry.name, label: base, url: '/imports/' + encodeURIComponent(entry.name) });
+          }
+        }
+        apps.sort((a,b)=>{ const an=(a.label||a.name||'').toLowerCase(); const bn=(b.label||b.name||'').toLowerCase(); return an.localeCompare(bn); });
+        res.writeHead(200, { 'content-type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify(apps));
+      } catch (e) {
+        res.writeHead(500, { 'content-type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({ error: 'failed' }));
+      }
+      return;
     }
 
     // ---- Poll storage API ----
@@ -255,7 +287,7 @@ wss.on('connection',(ws)=>{
       case 'hello': break;
       case 'announce': {
         const avMap=roomAvatars(room);
-        const wanted=(msg.avatar||'🙂')+''; const clientId=(msg.id||ws.id)+'';
+        const wanted=(msg.avatar||'����')+''; const clientId=(msg.id||ws.id)+'';
         if(avMap.has(wanted) && avMap.get(wanted)!==clientId){ ws.send(JSON.stringify({t:'avatar_conflict',room})); break; }
         avMap.set(wanted, clientId); ws.clientId=clientId; ws.avatar=wanted;
         const s=roomScores(room); if(!s[clientId]) s[clientId]={name:msg.name||'Guest',points:0,avatar:wanted}; else s[clientId].avatar=wanted;

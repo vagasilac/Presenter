@@ -6,6 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Lean Training — Presenter (v7.2 resizable mini‑QR)</title>
   <link rel="stylesheet" href="./style.css" />
+  <link rel="stylesheet" href="./style-extra.css" />
 </head>
   <body>
 <div class="wrap">
@@ -47,6 +48,8 @@
       </select>
       <button id="deleteBtn" class="pill" disabled title="Delete">🗑️</button>
     </div>
+    <!-- Client identity (shown only for trainee role) -->
+    <div id="headerClient" class="header-user right hidden"></div>
     <div id="roomBadge" class="row mini muted right">Room: <span id="roomId" class="chip mono">auto</span></div>
     <div class="row gap8 hidden file-menu" id="fileToolbar">
       <input id="presName" placeholder="Presentation name" class="w160" />
@@ -124,6 +127,11 @@
             <label class="mini muted"><input id="allowChange" type="checkbox" checked/> Allow answer change before time ends</label>
             <label class="mini muted"><input id="wcLimit" type="number" value="3" class="w80"/> Word cloud: max words</label>
             <label class="mini muted"><input id="openChars" type="number" value="120" class="w100"/> Open text: max chars</label>
+          </div>
+          <div class="row gap12 mt8">
+            <label class="mini muted">Image <input id="pollImg" type="file" accept="image/*"/></label>
+            <img id="pollImgPrev" alt="Poll image preview" style="max-height:64px; display:none; border-radius:8px; border:1px solid #233045"/>
+            <button id="pollImgClear" class="pill">Clear image</button>
           </div>
         </details>
       </div>

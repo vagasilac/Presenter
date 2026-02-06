@@ -1,0 +1,15 @@
+2025-09-22
+- Restored ability to insert saved polls into presentation slides and start them from those slides.
+- Added Insert buttons to Saved polls list (visible on presenter) via `savedPolls.js`.
+- Implemented slide poll items (`.poll-item`) and double-click handler to open a modal.
+- Modal shows question, timer bar, live results; supports Start and Finish actions.
+- Exposed `StartPoll` and `FinishPoll` globally for slide-triggered actions.
+- Extended `renderResults` and timer to also render inside modal (`#modalResultsArea`, `#modalTimerBar`).
+- Added `style-extra.css` for modal and poll item styling and linked it in `index.html`.
+- Fix: Ensure Insert button is always rendered; click no-ops if insertion unavailable, avoiding race with initial render.
+- Added quick Insert poll controls in Presentation nav bar (dropdown + button), so Insert is visible while on the Presentation tab.
+  - Fix: Prevent selector from jumping back to placeholder; stop reloading on click and preserve selection.
+- Saved polls are now editable: added Edit button next to Start/Insert/Delete in Saved polls. Editing opens the Create a poll UI with fields prefilled.
+  - Added Update poll and Cancel buttons in the Create UI while editing; Save   The chides during edit.
+- Restored poll images: added image upload/preview/clear in Create/Edit; polls persist `img` (data URL) again; editing allows changing or clearing the image.
+ - Removed footer text (hidden via CSS) per request.

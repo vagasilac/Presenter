@@ -1,0 +1,351 @@
+/* Lean Training — Presenter app (v7.5)
+   Fixes:
+   - Buttons clickable (whiteboard no-pointer until ON)
+   - Always-on Mini-QR renders via server /qr and is resizable
+     from bottom-left using a custom handle
+   - Tabs re-bound robustly
+*/
+
+// ---------- Tiny helpers ----------
+const $ = (s)=>document.querySelector(s);
+const $$ = (s)=>Array.from(document.querySelectorAll(s));
+const toast = (m)=>{ const el=$('#toast'); if(!el) return; el.textContent=m; el.style.display='block'; setTimeout(()=>el.style.display='none',2600) };
+const uid = ()=>Math.random().toString(36).slice(2,8);
+
+// ---------- Global-ish state ----------
+let ROLE = 'host';
+let ROOM = localStorage.getItem('room') || uid();
+let WS = null;
+let NAME = localStorage.getItem('name') || '';
+let CLIENT_ID = localStorage.getItem('clientId') || uid();
+let AVATAR = localStorage.getItem('avatar') || '';
+
+// Reflect room in header badge
+(function(){ const b = $('#roomId'); if(b) b.textContent = ROOM; })();
+
+// ---------- URL params influence role/room ----------
+(function(){
+  const params = new URLSearchParams(location.search);
+  if (params.get('room')) { ROOM = params.get('room'); localStorage.setItem('room', ROOM); const b=$('#roomId'); if(b) b.textContent=ROOM; }
+  if (params.get('role') === 'client') {
+    ROLE = 'client';
+    // Switch to client view
+    $('#slidesCard')?.classList.add('hidden');
+    $('#clientCard')?.classList.remove('hidden');
+    // Pre-fill WS URL to current host:port
+    const host = location.hostname || 'localhost';
+    const port = location.port || '8080';
+    const ws = $('#wsUrl'); if (ws) ws.value = `ws://${host}:${port}`;
+    // Ensure header switches to the trainee variant
+    try{ updateHeader && updateHeader(); }catch(_){ }
+  }
+})();
+
+// ---------- Join URL + session helpers ----------
+function computeJoinUrl(){
+  const origin = (location.origin && location.origin !== 'null' && location.origin !== 'file://')
+    ? location.origin
+    : `http://${location.hostname || '127.0.0.1'}:${location.port || '8080'}`;
+  const path = location.pathname || '/';
+  return `${origin}${path}?room=${encodeURIComponent(ROOM)}&role=client`;
+}
+function syncSessionHints(){
+  const joinUrl = computeJoinUrl();
+  const t = $('#joinUrlText'); if (t) t.textContent = joinUrl;
+  const ws = $('#wsUrl');
+  try{ const u = new URL(joinUrl); if(ws && (!ws.value || !ws.value.startsWith('ws://'))) ws.value = `ws://${u.hostname}:${u.port || '8080'}`; }catch(_){ /* noop */ }
+  const hw = $('#hostWarning'); if(hw && ['localhost','127.0.0.1',''].includes(location.hostname)) hw.classList.remove('hidden');
+}
+
+// ---------- Always-on Mini-QR (host only) ----------
+(function(){
+  const mini = $('#miniQR'); if(!mini) return;
+  if (ROLE === 'client') { mini.style.display='none'; return; } // host-only QR
+
+  // Disable native handle (bottom-right) — we implement our own bottom-left handle
+  
+
+  // Ensure <img> and a custom bottom-left handle element
+  let img = mini.querySelector('img');
+  if(!img){
+    img = document.createElement('img');
+    img.alt = 'Scan to join';
+    img.draggable = false; // visual rules live in CSS
+    mini.appendChild(img);
+  }
+  let handle = mini.querySelector('.mini-qr-handle');
+  if(!handle){
+    handle = document.createElement('div');
+    handle.className = 'mini-qr-handle'; // styling in CSS
+    mini.appendChild(handle);
+  }
+
+  function renderMiniQR(){
+    const url = computeJoinUrl();
+    const side = Math.max(96, Math.min(512, Math.round(Math.min(mini.clientWidth||110, mini.clientHeight||110))));
+    const qs = `text=${encodeURIComponent(url)}&size=${side}&ec=Q&border=4&t=${Date.now()}`;
+    img.src = `/qr.svg?${qs}`;
+  }
+
+  function persistSize(){
+    const r = mini.getBoundingClientRect();
+    localStorage.setItem('miniQR:size', JSON.stringify({ w:Math.round(r.width), h:Math.round(r.height) }));
+  }
+  function restoreSize(){
+    try{
+      const s = JSON.parse(localStorage.getItem('miniQR:size')||'null');
+      if(s && s.w && s.h){ mini.style.width = s.w+'px'; mini.style.height = s.h+'px'; }
+      else { mini.style.width='110px'; mini.style.height='110px'; }
+    }catch(_){ mini.style.width='110px'; mini.style.height='110px'; }
+  }
+
+  // Custom BL resize behaviour — element is anchored top-right (via CSS)
+  function blResizeStart(ev){ ev.preventDefault(); ev.stopPropagation();
+    const startX = ev.clientX; const startY = ev.clientY;
+    const rect0 = mini.getBoundingClientRect();
+    const rightEdge = rect0.right; const topEdge = rect0.top;
+    function onMove(e){
+      const x = e.clientX; const y = e.clientY;
+      let newW = Math.max(48, Math.min(window.innerWidth, rightEdge - x));
+      let newH = Math.max(48, Math.min(window.innerHeight, y - topEdge));
+      mini.style.width = newW + 'px';
+      mini.style.height = newH + 'px';
+      renderMiniQR();
+    }
+    function onUp(){ window.removeEventListener('pointermove', onMove); window.removeEventListener('pointerup', onUp); persistSize(); }
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp, { once:true });
+  }
+  handle.addEventListener('pointerdown', blResizeStart);
+
+  // Retry loader in case server boots after page load
+  let tries = 0; const MAX_TRIES = 30;
+  function ensureLoaded(){
+    if(img.complete && img.naturalWidth>0){ return; }
+    tries++; if(tries>MAX_TRIES) return;
+    renderMiniQR();
+    setTimeout(ensureLoaded, 1000);
+  }
+  let didFB=false;
+  img.addEventListener('error', ()=>{
+    if(!didFB){
+      const side = Math.round(Math.min(mini.clientWidth||110, mini.clientHeight||110))*2;
+      const data = qrFallbackDataURL(computeJoinUrl(), side);
+      if(data){ img.src = data; didFB=true; return; }
+    }
+    setTimeout(ensureLoaded, 800);
+  });
+  img.addEventListener('load', ()=> { tries = MAX_TRIES+1; });
+
+
+  // Keep QR crisp on size/orientation/layout changes
+  if (typeof ResizeObserver !== 'undefined'){
+    const ro = new ResizeObserver(()=>renderMiniQR()); ro.observe(mini);
+  } else {
+    window.addEventListener('resize', ()=>renderMiniQR());
+  }
+  window.addEventListener('orientationchange', ()=>renderMiniQR());
+
+  restoreSize();
+  renderMiniQR();
+})();
+
+function hideFileMenu(){
+  const tb = document.getElementById('fileToolbar');
+  if (tb) tb.classList.add('hidden');
+  document.querySelector('.tab[data-tab="file"]')?.classList.remove('active');
+  document.querySelector('.tab[data-tab="presentation"]')?.classList.add('active');
+}
+
+// ---------- Tabs ----------
+(function(){
+  function showTab(tabEl){
+    $$('.tab').forEach(x=>x.classList.remove('active'));
+    $$('.slide').forEach(s=>s.classList.remove('active'));
+    if (tabEl){ tabEl.classList.add('active'); const target=$('#'+tabEl.dataset.tab); if(target) target.classList.add('active'); }
+  }
+  // Delegate clicks so it's robust
+  document.addEventListener('click', (ev)=>{
+    const t = ev.target.closest('.tab');
+    if(t){
+      ev.preventDefault();
+      if(t.dataset.tab==='file'){
+        const tb=$('#fileToolbar');
+        if(!tb) return;
+        if(tb.classList.contains('hidden')){
+          $$('.tab').forEach(x=>x.classList.remove('active'));
+          $$('.slide').forEach(s=>s.classList.remove('active'));
+          $('#presentation')?.classList.add('active');
+          tb.style.left = t.offsetLeft + 'px';
+          tb.style.top = (t.offsetTop + t.offsetHeight) + 'px';
+          tb.classList.remove('hidden');
+          t.classList.add('active');
+        } else {
+          hideFileMenu();
+          document.querySelector('.tab[data-tab="presentation"]')?.classList.add('active');
+        }
+        return;
+      }
+      hideFileMenu();
+      showTab(t);
+    } else if(!ev.target.closest('#fileToolbar')) {
+      hideFileMenu();
+    }
+  });
+  // Ensure Presentation is active on load by default
+  const active = document.querySelector('.tab.active');
+  if(!active){ const first = document.querySelector('.tab[data-tab="presentation"]') || document.querySelector('.tab'); if(first) showTab(first); }
+  hideFileMenu();
+})();
+
+// ---------- Charts (sparklines) ----------
+function spark(id, values){ const c=$(id); if(!c) return; const ctx=c.getContext('2d'); const w=c.width=Math.max(200,c.clientWidth||200); const h=c.height; const min=Math.min(...values), max=Math.max(...values); ctx.clearRect(0,0,w,h); ctx.lineWidth=2; ctx.strokeStyle='#58c4dc'; ctx.beginPath(); values.forEach((v,i)=>{const x=i/(values.length-1)*w; const y=h-(v-min)/(max-min+1e-6)*h; i?ctx.lineTo(x,y):ctx.moveTo(x,y)}); ctx.stroke(); }
+function drawComparative(){ spark('#chartLead',[18,16,17,15,14,13,9,8]); spark('#chartCost',[10,9,9,8,7,6,5,4]); spark('#chartFlex',[2,3,3,4,5,6,8,9]); }
+window.addEventListener('resize', drawComparative);
+setTimeout(drawComparative, 60);
+
+// ---------- Mass line animation ----------
+(function(){
+  function runAnim(){ const g=document.querySelector('#massViz #cars'); if(!g) return; g.innerHTML=''; for(let i=0;i<8;i++){ const x=30+i*28; const car=document.createElementNS('http://www.w3.org/2000/svg','rect'); car.setAttribute('x',x);car.setAttribute('y',58);car.setAttribute('width',22);car.setAttribute('height',22);car.setAttribute('rx',4); car.setAttribute('fill','#58c4dc'); g.appendChild(car);} let t=0; const id=setInterval(()=>{ t+=1; const rects=[...g.children]; rects.forEach((r,idx)=>{const x=30+((t+idx*6)%260); r.setAttribute('x',x)}); if(t>1200) clearInterval(id); },30); toast('Animation: Flow vs Push in action'); }
+  document.addEventListener('click',(e)=>{ const b=e.target.closest('#animateBtn'); if(b){ e.preventDefault(); runAnim(); }});
+})();
+
+// ---------- WebSocket realtime ----------
+const rtState={scores:{}, currentPoll:null, answers:{}, timer:null, timeLeft:0, reactions:{}, qa:{}, pollFinished:false};
+
+function renderParticipants(){
+  const list=$('#participantList');
+  const count=$('#participantCount');
+  if(!list||!count) return;
+  const entries=Object.values(rtState.scores);
+  count.textContent=String(entries.length);
+  if(!entries.length){ list.textContent='No participants yet.'; return; }
+  list.innerHTML=entries.map(e=>`<div class="chip">${e.avatar||'🙂'} ${e.name||'Guest'}</div>`).join(' ');
+}
+
+function send(obj){ if(!WS||WS.readyState!==1) return; WS.send(JSON.stringify(obj)); }
+function handle(msg){
+  if(!msg || (msg.room && msg.room!==ROOM)) return;
+  if(/^qa_/.test(msg.t)) return handleQA(msg);
+  switch(msg.t){
+    case 'hello': break;
+    case 'announce': addClient(msg.id,msg.name,msg.avatar); break;
+    case 'poll':
+      rtState.currentPoll=msg.poll; rtState.answers={};
+      if(ROLE==='host'){
+        renderResults();
+        startTimer(msg.poll);
+      } else {
+        rtState.timeLeft = msg.poll?.timed || 0;
+        updateTimerBar();
+      }
+      renderClientPoll();
+      break;
+    case 'tick':
+      rtState.timeLeft = Math.max(0, Number(msg.left)||0);
+      updateTimerBar();
+      break;
+    case 'answer': rtState.answers[msg.id]=msg.answer; renderResults(); break;
+    case 'scores': rtState.scores=msg.scores||rtState.scores; renderLeader(); renderParticipants(); break;
+    case 'reset': rtState.scores={}; renderLeader(); renderParticipants(); break;
+    case 'react': rtState.reactions[msg.emoji]=(rtState.reactions[msg.emoji]||0)+1; renderReactions(); showReactionBubble(msg.emoji); send({t:'react_update', room:ROOM, reactions:rtState.reactions}); break;
+    case 'react_update': rtState.reactions = msg.reactions || rtState.reactions; renderReactions(); break;
+    case 'roster': setRoster(msg.avatars || []); break;
+    case 'avatar_conflict': toast('Avatar already taken — please pick another one.'); localStorage.removeItem('joined'); showJoinUI(); break;
+  }
+}
+
+function addClient(id,name,avatar){ if(!rtState.scores[id]) rtState.scores[id]={name,points:0,avatar:avatar||'🙂'}; renderParticipants(); }
+
+renderParticipants();
+
+function connectWS(){
+  // Prefer explicit URL from input; otherwise fall back to current host:port
+  let url = $('#wsUrl')?.value?.trim();
+  if(!url){
+    const host = location.hostname || 'localhost';
+    const port = location.port || '8080';
+    url = `ws://${host}:${port}`;
+  }
+  if(!url){ return toast('Enter WebSocket URL'); }
+  $('#connState').textContent='connecting…';
+  try{ WS=new WebSocket(url);}catch(e){ $('#connState').textContent='disconnected'; return toast('Invalid WS URL') }
+  WS.onopen=()=>{ $('#connState').textContent='connected'; send({t:'hello',room:ROOM,role:ROLE,name:NAME});
+    if(ROLE==='client' && (localStorage.getItem('joined')==='1')){
+      AVATAR = localStorage.getItem('avatar') || '🙂';
+      NAME = localStorage.getItem('name') || genCodeName(AVATAR);
+      CLIENT_ID = localStorage.getItem('clientId') || CLIENT_ID;
+      send({t:'announce',room:ROOM,id:CLIENT_ID,name:NAME,avatar:AVATAR});
+      hideJoinUI();
+    }
+  };
+  WS.onclose=()=>{$('#connState').textContent='disconnected'};
+  WS.onerror=()=>{$('#connState').textContent='error'; toast('WebSocket connect failed. Is the server running?');};
+  WS.onmessage=(ev)=>{ let msg={}; try{ msg=JSON.parse(ev.data) }catch(e){ return } handle(msg) };
+}
+
+// Bind Connect button robustly
+(function(){ document.addEventListener('click',(e)=>{ const b=e.target.closest('#connectBtn'); if(!b) return; e.preventDefault(); connectWS(); }); })();
+
+// ---------- Polls (host) ----------
+(function(){ const t=$('#pollType'); if(!t) return; // host UI exists only on presenter
+  const choicesWrap=$('#choicesWrap');
+  const multiWrap=$('#multiWrap');
+  const savedAcc=$('#savedAcc'), createAcc=$('#createAcc');
+  const correctEnable=$('#correctEnable');
+  const correctKey=$('#correctKey');
+  const correctMarks=$('#correctMarks');
+  const wordcloudOpts=$('#wordcloudOpts');
+  const openOpts=$('#openOpts');
+  const imgInput=$('#pollImg');
+  const imgPrev=$('#pollImgPrev');
+  const imgClear=$('#pollImgClear');
+  const saveBtn = $('#savePoll');
+  const sendBtn = $('#sendPoll');
+  let editingPollId=null;
+  let pollImgData=null;
+  let correctSet=new Set(); // for MC
+  let tfCorrect=null; // for TF
+  if(savedAcc && createAcc){
+    savedAcc.addEventListener('toggle',()=>{ if(savedAcc.open) createAcc.open=false; });
+    createAcc.addEventListener('toggle',()=>{ if(createAcc.open) savedAcc.open=false; });
+  }
+  function showCorrectMarks(show){ if(correctMarks) correctMarks.style.display = show ? 'flex' : 'none'; }
+  function rebuildCorrectMarks(){
+    if(!correctMarks) return;
+    correctMarks.innerHTML='';
+    const type=t.value;
+    if(correctKey) correctKey.style.display = (correctEnable?.checked && (type==='mc'||type==='tf')) ? 'none' : '';
+    if(type==='mc'){
+      const inputs=[...$$('#choicesWrap .choice')];
+      const arr=inputs.map((el,idx)=>({label:String.fromCharCode(65+idx), el})).filter(x=>x.el.value.trim());
+      arr.forEach((item)=>{
+        const b=document.createElement('button'); b.type='button'; b.className='mark'; b.textContent=item.label;
+        if(correctSet.has(item.label)) b.classList.add('active');
+        b.addEventListener('click',()=>{
+          const multi=$('#multiMC').checked;
+          if(multi){ if(correctSet.has(item.label)) correctSet.delete(item.label); else correctSet.add(item.label); }
+          else { correctSet.clear(); correctSet.add(item.label); }
+          rebuildCorrectMarks();
+          syncCorrectKeyFromUI();
+        });
+        correctMarks.appendChild(b);
+      });
+      showCorrectMarks(correctEnable.checked);
+    }else if(type==='tf'){
+      ['True','False'].forEach(lbl=>{
+        const b=document.createElement('button'); b.type='button'; b.className='mark'; b.textContent=lbl;
+        if(tfCorrect===lbl) b.classList.add('active');
+        b.addEventListener('click',()=>{ tfCorrect = (tfCorrect===lbl ? null : lbl); rebuildCorrectMarks(); syncCorrectKeyFromUI(); });
+        correctMarks.appendChild(b);
+      });
+      showCorrectMarks(correctEnable.checked);
+    }else{
+      showCorrectMarks(false);
+    }
+  }
+  function syncPollType(){
+    const v=t.value;
+    if(choicesWrap) choicesWrap.style.display=(v==='mc')?'block':'none';
+    if(multiWrap) multiWrap.style.display=(v==='mc')?'inline-flex':'none';
+

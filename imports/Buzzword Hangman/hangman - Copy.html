@@ -1,0 +1,1083 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+
+  <meta charset="UTF-8" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+  <style>
+
+    body {
+
+      font-family: 'Segoe UI', 'Arial', sans-serif;
+
+      background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+
+      margin: 0;
+
+      padding: 20px;
+
+      min-height: 100vh;
+
+      display: flex;
+
+      flex-direction: column;
+
+      align-items: center;
+
+      color: white;
+
+      overflow: hidden; /* Prevent scrollbars from confetti */
+
+    }
+
+
+
+    .game-container {
+
+      max-width: 1200px;
+
+      width: 100%;
+
+      display: flex;
+
+      gap: 40px;
+
+      position: relative; /* For static circle positioning relative to game-container */
+
+      z-index: 1; /* Ensure game content is above confetti */
+
+    }
+
+
+
+    .main-panel {
+
+      margin-top: 2rem;
+      flex: 3;
+
+      text-align: center;
+
+      position: relative; /* Needed for absolute positioning of static-circle */
+
+    }
+
+
+
+.right-panel {
+  margin-top: 2rem;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-height: 92vh; /* Legyen maximum 80% a képernyőmagasságból */
+  overflow-y: auto; /* Görgethető, ha hosszabb */
+  padding-right: 10px; /* Görgetősáv mellett legyen hely */
+}
+
+
+
+
+    h1 {
+
+      font-size: 2.8em;
+
+      margin-bottom: 10px;
+
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+
+      text-align: center;
+
+    }
+
+
+
+    .buzzword-btn {
+
+      padding: 10px 20px;
+
+      background: #fff;
+
+      color: #2a5298;
+
+      border: none;
+
+      border-radius: 8px;
+
+      font-weight: bold;
+
+      cursor: pointer;
+
+      transition: all 0.3s ease;
+
+      margin-bottom: 10px;
+
+      width: 100%;
+
+      display: flex; /* Use flexbox for button content */
+
+      justify-content: center; /* Center text and flag */
+
+      align-items: center;
+
+      gap: 8px; /* Space between text and flag */
+
+    }
+
+
+
+    .buzzword-btn:hover {
+
+      background: #eee;
+
+      transform: scale(1.05);
+
+    }
+
+
+
+    .quiz-hint {
+
+      font-size: 1.6em;
+
+      font-weight: bold;
+
+      margin: 10px 0;
+
+      background: rgba(255,255,255,0.1);
+
+      padding: 15px;
+
+      border-radius: 10px;
+
+      border: 2px solid rgba(255,255,255,0.3);
+
+      display: flex; /* To align buzzword and flag */
+
+      align-items: center;
+
+      justify-content: center;
+
+    }
+
+
+
+    .quiz-hint img.flag-icon {
+
+      width: 30px; /* Adjust flag size as needed */
+
+      height: auto;
+
+      margin-left: 10px;
+
+      border: 1px solid rgba(255,255,255,0.3);
+
+      border-radius: 3px;
+
+    }
+
+
+
+    .solution-display {
+
+      font-size: 1.3em;
+
+      margin-bottom: 20px;
+
+      color: #ffeb3b;
+
+      display: none;
+
+    }
+
+
+
+    .game-layout {
+
+      display: flex;
+
+      flex-direction: row;
+
+      gap: 20px;
+
+      justify-content: center;
+
+      flex-wrap: wrap;
+
+      margin-bottom: 20px;
+
+    }
+
+
+
+    .car-container {
+
+      flex: 1;
+
+      min-width: 300px;
+
+      background: rgba(255,255,255,0.1);
+
+      border-radius: 15px;
+
+      padding: 20px;
+
+    }
+
+
+
+    .car-container img {
+
+      width: 100%;
+
+      display: none;
+
+      border-radius: 10px;
+
+    }
+
+
+
+    .letter-section {
+
+      flex: 1;
+
+      min-width: 300px;
+
+    }
+
+
+
+    .word-display {
+
+      font-size: 2em;
+
+      font-family: 'Courier New', monospace;
+
+      margin: 10px 0;
+
+      letter-spacing: 0.3em;
+
+      background: rgba(255,255,255,0.1);
+
+      padding: 15px;
+
+      border-radius: 10px;
+
+      min-height: 60px;
+
+      display: flex;
+
+      align-items: center;
+
+      justify-content: center;
+
+    }
+
+
+
+    .alphabet {
+
+      display: grid;
+
+      grid-template-columns: repeat(auto-fit, minmax(40px, 1fr));
+
+      gap: 5px;
+
+      margin: 10px 0;
+
+    }
+
+    #review-buttons {
+      gap: 1rem;
+    }
+
+    .letter-btn {
+
+      padding: 10px;
+
+      font-size: 1em;
+
+      font-weight: bold;
+
+      border: none;
+
+      border-radius: 5px;
+
+      background: rgba(255,255,255,0.2);
+
+      color: white;
+
+      cursor: pointer;
+
+      transition: all 0.3s ease;
+
+    }
+
+
+
+    .letter-btn:hover {
+
+      background: rgba(255,255,255,0.3);
+
+      transform: translateY(-2px);
+
+    }
+
+
+
+    .letter-btn:disabled {
+
+      background: rgba(255,0,0,0.5); /* Stays red if wrong guess */
+
+      cursor: not-allowed;
+
+      transform: none;
+
+    }
+
+
+
+    .letter-btn.correct {
+
+      background: rgba(0,255,0,0.5); /* Stays green if correct guess */
+
+    }
+
+
+
+    .game-status {
+
+      font-size: 1.5em;
+
+      margin: 20px 0;
+
+      font-weight: bold;
+
+    }
+
+
+
+    .wrong-count {
+
+      font-size: 1.2em;
+
+      margin: 10px 0;
+
+      color: #ffbaba;
+
+    }
+
+
+
+    /* Styles for the static circle image */
+
+    #static-circle {
+
+      position: absolute; /* Default position relative to .main-panel */
+
+      top: 20px; /* Default top position */
+
+      left: 20px; /* Default left position */
+
+      width: 200px; /* Default width */
+
+      height: 200px; /* Default height */
+
+      z-index: 99; /* Ensure it's above most elements */
+
+      /* Apply smooth transitions for width, height, and transform */
+
+      transition: width 0.5s ease-in-out, height 0.5s ease-in-out, transform 0.5s ease-in-out;
+
+      transform-origin: center center; /* Rotate around its center now */
+
+      transform: rotate(0deg); /* Start with no rotation */
+
+    }
+
+
+
+    /* Class for enlarged state - just changes width/height */
+
+    #static-circle.enlarged {
+
+      width: 800px; /* 200px * 4 = 800px */
+
+      height: 800px; /* 200px * 4 = 800px */
+
+    }
+
+
+
+    /* Red arrow styles */
+
+    #red-arrow {
+
+      position: absolute;
+
+      width: 0;
+
+      height: 0;
+
+      border-left: 20px solid transparent;
+
+      border-right: 20px solid transparent;
+
+      border-bottom: 40px solid red;
+
+      opacity: 0;
+
+      transition: opacity 0.5s ease-in-out;
+
+      z-index: 100;
+
+      pointer-events: none;
+
+    }
+
+
+
+    #red-arrow.show {
+
+      opacity: 1;
+
+    }
+
+    .letter-btn.retry {
+      background: orange;
+    }
+
+
+
+
+    /* Keyframe for rotation */
+
+    @keyframes rotate {
+
+      from { transform: rotate(var(--initial-rotation, 0deg)); } /* Start from previous rotation */
+
+      to { transform: rotate(var(--target-rotation)); } /* Rotate to target angle */
+
+    }
+
+
+
+    /* Apply rotation animation */
+
+    .rotating-circle {
+
+      animation-name: rotate;
+
+      animation-timing-function: ease-out; /* Smooth deceleration */
+
+      animation-fill-mode: forwards;
+
+    }
+
+
+
+    /* Confetti styles */
+
+    .confetti {
+
+      position: fixed; /* Changed to fixed to ensure it covers the whole screen */
+
+      top: -20px; /* Start above the viewport */
+
+      width: 20px; /* Base size */
+
+      height: 20px; /* Base size */
+
+      border-radius: 50%;
+
+      opacity: 0;
+
+      pointer-events: none; /* Allow clicks to pass through */
+
+      z-index: 9999; /* Ensure confetti is on top */
+
+    }
+
+    .toggle-btn {
+      background: #4caf50;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 8px 16px;
+      font-size: 0.9em;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+
+    .toggle-btn.off {
+      background: #f44336; /* Piros ha ki van kapcsolva */
+    }
+
+
+
+
+    @keyframes fall {
+
+      0% {
+
+        transform: translateY(0) rotate(0deg);
+
+        opacity: 0;
+
+      }
+
+      10% {
+
+        opacity: 1;
+
+      }
+
+      100% {
+
+        transform: translateY(100vh) rotate(720deg); /* Fall to bottom of viewport */
+
+        opacity: 0;
+
+      }
+
+    }
+
+  </style>
+
+</head>
+
+<body>
+
+  <div class="game-container">
+
+    <div class="main-panel">
+
+      <img src="circle.png" id="static-circle" alt="Decorative circle"> 
+
+      <div id="red-arrow"></div>
+
+      <div class="quiz-hint" id="quiz-hint">VPS</div>
+
+      <div class="solution-display" id="solution-display">VALUE-ADDED PRODUCTION SYSTEM</div>
+
+
+
+      <div class="game-layout">
+
+        <div class="car-container">
+
+          <img src="hangman0.png" id="hangman-img-0">
+
+          <img src="hangman1.png" id="hangman-img-1">
+
+          <img src="hangman2.png" id="hangman-img-2">
+
+          <img src="hangman3.png" id="hangman-img-3">
+
+          <img src="hangman4.png" id="hangman-img-4">
+
+          <img src="hangman5.png" id="hangman-img-5">
+
+          <img src="hangman6.png" id="hangman-img-6">
+
+          <img src="hangman7.png" id="hangman-img-7">
+
+          <img src="hangman8.png" id="hangman-img-8"> 
+
+        </div>
+
+
+
+        <div class="letter-section">
+
+          <div class="word-display" id="word-display"></div>
+
+          <div class="wrong-count" id="wrong-count">Wrong guesses: 0/6</div>
+
+          <div class="alphabet" id="alphabet"></div>
+
+        </div>
+
+      </div>
+
+
+
+<div class="game-status" id="game-status" style="display: flex; align-items: center; justify-content: center; gap: 20px;">
+  <span id="status-text">Találd ki a feladványt!</span>
+
+  <button id="toggle-animation-btn" class="toggle-btn">FORGATÁS: BE</button>
+</div>
+
+
+    <div id="review-buttons" style="display:none; margin-top: 20px;">
+      <button id="btn-correct" class="buzzword-btn">HELYES VÁLASZ</button>
+      <button id="btn-retry" class="buzzword-btn">SAJNOS NEM JÓ</button>
+    </div>
+
+
+    </div>
+
+
+
+    <div class="right-panel">
+
+      <strong style="margin-bottom: 10px;">Feladványok</strong>
+
+      <button class="buzzword-btn" onclick="selectBuzzword('BMW')">BMW</button>
+      <button class="buzzword-btn" onclick="selectBuzzword('DZS')">DZS</button>
+
+      <button class="buzzword-btn" onclick="selectBuzzword('LEAN')">LEAN</button>
+
+      <button class="buzzword-btn" onclick="selectBuzzword('WPS')">WPS</button>
+
+      <button class="buzzword-btn" onclick="selectBuzzword('PDCA')">PDCA</button>
+
+      <button class="buzzword-btn" onclick="selectBuzzword('PDSA')">PDSA</button>
+
+      <button class="buzzword-btn" onclick="selectBuzzword('FFF')">FFF</button>
+
+      <button class="buzzword-btn" onclick="selectBuzzword('TPS')">TPS</button>
+
+      <button class="buzzword-btn" onclick="selectBuzzword('CIP')">CIP</button>
+
+      <button class="buzzword-btn" onclick="selectBuzzword('KVP')">KVP</button>
+
+      <button class="buzzword-btn" onclick="selectBuzzword('ÉTR')">ÉTR</button>
+
+      <button class="buzzword-btn" onclick="selectBuzzword('RFT')">RFT</button>
+
+      <button class="buzzword-btn" onclick="selectBuzzword('5+5 Debrecen 5/2')">5+5 Debrecen 5/2</button>
+
+      <button class="buzzword-btn" onclick="selectBuzzword('5S - angol')">5S - angol</button>
+
+      <button class="buzzword-btn" onclick="selectBuzzword('5S - magyar')">5S - magyar</button>
+
+      <button class="buzzword-btn" onclick="selectBuzzword('STANDARD')">STANDARD</button>
+
+    </div>
+
+  </div>
+
+
+
+<script>
+// Mapping of language codes to flag image URLs
+const flags = {
+  'en': 'https://placehold.co/30x20/000000/FFFFFF?text=UK', 
+  'de': 'https://placehold.co/30x20/000000/FFFFFF?text=DE', 
+  'hu': 'https://placehold.co/30x20/000000/FFFFFF?text=HU'  
+};
+
+const buzzwords = {
+  'BMW': { solution: 'BAYERISCHE MOTOREN WERKE', language: 'de' },
+  'LEAN': { solution: 'SZŰK, KARCSÚ', language: 'en' },
+  'WPS': { solution: 'WERTSCHÖPFUNGSPROZESS', language: 'de' },
+  'PDCA': { solution: 'PLAN-DO-CHECK-ACT', language: 'en' },
+  'PDSA': { solution: 'PLAN-DO-STUDY-ACT', language: 'en' },
+  'DZS': { solution: 'VÁGÁSI DOROTTYA ÉS ZSÓFIA', language: 'hu' },
+  'VPS': { solution: 'VALUE-ADDED PRODUCTION SYSTEM', language: 'en' },
+  'FFF': { solution: 'FOLYAMATOS FEJLESZTÉSI FOLYAMAT', language: 'hu' },
+  'TPS': { solution: 'TOYOTA PRODUCTION SYSTEM', language: 'en' },
+  'ÉTR': { solution: 'ÉRTÉKTEREMTŐ TERMELÉSI RENDSZER', language: 'hu' },
+  'CIP': { solution: 'CONTINUOUS IMPROVEMENT PROCESS', language: 'en' },
+  'KVP': { solution: 'KONTINUIERLICHER VERBESSERUNGSPROZESS', language: 'de' },
+  'STANDARD': { solution: 'AKTUÁLIS LEGJOBB GYAKORLAT', language: 'hu' },
+  'RFT': { solution: 'RIGHT FIRST TIME', language: 'en' },
+  '5+5 Debrecen 5/2': { solution: 'SZUBSZIDIARITÁS', language: 'hu' },
+  '5S - angol': { solution: 'SORT, SET IN ORDER, SHINE, STANDARDIZE, SUSTAIN', language: 'en' },
+  '5S - magyar': { solution: 'SZORTÍROZÁS, ELRENDEZÉS, TISZTÍTÁS, SZABVÁNYOSÍTÁS, FENNTARTÁS', language: 'hu' },
+};
+
+let currentBuzzwordAbbr = '';
+let currentSolution = '';
+let guessedLetters = new Set();
+let wrongGuesses = 0;
+let circleAnimationEnabled = true;
+let pendingLetter = null; // Az éppen vizsgált betű
+let pendingButton = null; // Az éppen vizsgált gomb
+let isWholeWordCheck = false; // Új funkció: teljes szóra kérdezés
+const maxWrongGuesses = 6;
+let arrowTopToggle = false; // <== NEW TOGGLE VARIABLE
+
+const quizHintEl = document.getElementById('quiz-hint');
+const solutionDisplayEl = document.getElementById('solution-display');
+const wordDisplayEl = document.getElementById('word-display');
+const wrongCountEl = document.getElementById('wrong-count');
+const alphabetEl = document.getElementById('alphabet');
+const gameStatusEl = document.getElementById('game-status');
+
+const hangmanImages = [];
+for (let i = 0; i <= 7; i++) {
+  hangmanImages.push(document.getElementById(`hangman-img-${i}`));
+}
+const winImage = document.getElementById('hangman-img-8');
+const staticCircle = document.getElementById('static-circle');
+const redArrow = document.getElementById('red-arrow');
+const mainPanel = document.querySelector('.main-panel');
+
+let isInitialLoad = true;
+let gameWon = false;
+let currentRotationDegrees = 0;
+
+function createLetterButton(letter) {
+  const button = document.createElement('button');
+  button.classList.add('letter-btn');
+  button.textContent = letter;
+  button.onclick = (event) => handleGuess(letter, event.target);
+  alphabetEl.appendChild(button);
+}
+
+function initAlphabet() {
+  alphabetEl.innerHTML = '';
+  for (let i = 65; i <= 90; i++) {
+    createLetterButton(String.fromCharCode(i));
+  }
+  ['Ä', 'Ö', 'Ü', 'ß'].forEach(createLetterButton);
+  ['Á', 'É', 'Í', 'Ó', 'Ő', 'Ú', 'Ü', 'Ű'].forEach(createLetterButton);
+}
+
+function positionArrow() {
+  if (!staticCircle || !redArrow) return;
+
+  const circleRect = staticCircle.getBoundingClientRect();
+  const mainPanelRect = mainPanel.getBoundingClientRect();
+
+  const circleCenterX = circleRect.left + circleRect.width / 2 - mainPanelRect.left;
+  const circleCenterY = circleRect.top + circleRect.height / 2 - mainPanelRect.top;
+
+  const baseCircleHeight = 240; // Fixed reference size
+
+  const arrowLeft = circleCenterX - 20; // Half arrow width
+  let arrowTop;
+
+  if (arrowTopToggle) {
+    arrowTop = circleCenterY + baseCircleHeight;
+  } else {
+    arrowTop = circleCenterY + baseCircleHeight + 120;
+  }
+
+  arrowTopToggle = !arrowTopToggle; // Toggle for next call
+
+  redArrow.style.left = `${arrowLeft}px`;
+  redArrow.style.top = `${arrowTop}px`;
+}
+
+
+function selectBuzzword(buzzwordAbbr) {
+  currentBuzzwordAbbr = buzzwordAbbr;
+  currentSolution = buzzwords[buzzwordAbbr].solution.toUpperCase();
+  const languageCode = buzzwords[buzzwordAbbr].language;
+  const flagImageUrl = flags[languageCode] || '';
+
+  guessedLetters.clear();
+  gameWon = false;
+  wrongGuesses = 0;
+  currentRotationDegrees = 0;
+
+  quizHintEl.innerHTML = currentBuzzwordAbbr;
+  if (flagImageUrl) {
+    const flagImg = document.createElement('img');
+    flagImg.src = flagImageUrl;
+    flagImg.alt = `${languageCode} flag`;
+    quizHintEl.appendChild(flagImg);
+  }
+
+  solutionDisplayEl.textContent = currentSolution;
+  solutionDisplayEl.style.display = 'none';
+
+  updateWordDisplay();
+  updateHangmanImage();
+  updateWrongCount();
+
+  document.getElementById('status-text').textContent = 'Találd ki a feladványt!';
+
+
+  document.querySelectorAll('.letter-btn').forEach(button => {
+    button.disabled = false;
+    button.classList.remove('correct');
+  });
+
+  if (staticCircle) {
+    if (staticCircle.parentNode !== mainPanel) {
+      mainPanel.prepend(staticCircle);
+    }
+    staticCircle.classList.remove('rotating-circle', 'enlarged');
+    staticCircle.style.cssText = `
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      width: 200px;
+      height: 200px;
+      z-index: 99;
+      transition: width 0.5s ease-in-out, height 0.5s ease-in-out, transform 0.5s ease-in-out;
+      transform-origin: center center;
+      transform: rotate(0deg);
+    `;
+  }
+
+  redArrow.classList.remove('show');
+
+  document.querySelectorAll('.confetti').forEach(c => c.remove());
+  isInitialLoad = false;
+  staticCircle.style.transition = '';
+  staticCircle.style.transform = 'scale(1) rotate(0deg)';
+  currentRotationDegrees = 0;
+}
+
+function updateWordDisplay() {
+  let display = '';
+  for (const char of currentSolution) {
+    if (char === ' ' || char === '-' || char === ',') {
+      display += char;
+    } else if (guessedLetters.has(char)) {
+      display += char;
+    } else {
+      display += '_';
+    }
+  }
+  wordDisplayEl.textContent = display;
+}
+
+
+function updateHangmanImage() {
+  hangmanImages.forEach(img => img.style.display = 'none');
+  winImage.style.display = 'none';
+
+  if (gameWon) {
+    winImage.style.display = 'block';
+  } else if (isInitialLoad) {
+    hangmanImages[0].style.display = 'block';
+  } else if (wrongGuesses === 0) {
+    hangmanImages[1].style.display = 'block';
+  } else if (wrongGuesses <= maxWrongGuesses) {
+    hangmanImages[wrongGuesses + 1].style.display = 'block';
+  } else {
+    hangmanImages[7].style.display = 'block';
+  }
+}
+
+function updateWrongCount() {
+  wrongCountEl.textContent = `Rossz tippek száma  : ${wrongGuesses}/${maxWrongGuesses}`;
+}
+
+function startCircleAnimation() {
+  if (!staticCircle) return;
+
+  if (!circleAnimationEnabled) {
+    return; // Kilépés, ha nincs animáció
+  }
+
+  staticCircle.style.transition = 'transform 0.5s ease-in-out';
+  staticCircle.style.transform = `scale(4) rotate(${currentRotationDegrees}deg)`;
+
+  setTimeout(() => {
+    positionArrow();
+    redArrow.classList.add('show');
+  }, 50);
+
+  setTimeout(() => {
+    const randomTurns = Math.floor(Math.random() * 3) + 1;
+    const randomExtraDegrees = Math.random() * 360;
+    const totalRotation = (randomTurns * 360) + randomExtraDegrees;
+
+    currentRotationDegrees += totalRotation;
+
+    staticCircle.style.transition = 'transform 3s ease-out';
+    staticCircle.style.transform = `scale(4) rotate(${currentRotationDegrees}deg)`;
+
+    setTimeout(() => {
+      staticCircle.style.transition = 'transform 0.5s ease-in-out';
+      staticCircle.style.transform = `scale(1) rotate(${currentRotationDegrees}deg)`;
+      redArrow.classList.remove('show');
+
+      // Itt jön a review gombok megjelenítése
+      document.getElementById('review-buttons').style.display = 'flex'; 
+    }, 4500);
+  }, 500);
+}
+
+
+
+function handleGuess(letter, button) {
+  if (guessedLetters.has(letter)) return;
+
+  button.disabled = true;
+
+  if (circleAnimationEnabled) {
+    pendingLetter = letter;
+    pendingButton = button;
+    startCircleAnimation();
+  } else {
+    processGuess(letter, button);
+  }
+}
+
+function processGuess(letter, button) {
+  if (currentSolution.includes(letter)) {
+    guessedLetters.add(letter);
+    button.classList.add('correct');
+    updateWordDisplay();
+    checkGameStatus();
+  } else {
+    wrongGuesses++;
+    updateWrongCount();
+    updateHangmanImage();
+    checkGameStatus();
+  }
+}
+
+
+function checkGameStatus() {
+  const currentDisplay = wordDisplayEl.textContent.replace(/ /g, '').replace(/-/g, '');
+  const solutionNoSpaces = currentSolution.replace(/ /g, '').replace(/-/g, '');
+
+  if (currentDisplay === solutionNoSpaces) {
+    document.getElementById('status-text').textContent = 'Nyertél! 🎉';
+    solutionDisplayEl.style.display = 'block';
+    disableAllLetterButtons();
+    gameWon = true;
+    updateHangmanImage();
+    launchConfetti();
+  } else if (wrongGuesses >= maxWrongGuesses) {
+    document.getElementById('status-text').textContent = 'Vesztettél! 😔';
+    solutionDisplayEl.style.display = 'block';
+    disableAllLetterButtons();
+    updateHangmanImage();
+  }
+
+  // Biztosan eltűnik a RÁKÉRDEZÉS gomb minden végjáték esetén:
+  if (wrongGuesses >= maxWrongGuesses || gameWon) {
+    document.getElementById('btn-wholeword').style.display = 'none';
+  }
+}
+
+
+function disableAllLetterButtons() {
+  document.querySelectorAll('.letter-btn').forEach(button => {
+    button.disabled = true;
+  });
+}
+
+function launchConfetti() {
+  const numConfetti = 50;
+
+  for (let i = 0; i < numConfetti; i++) {
+    const confetti = document.createElement('img');
+    confetti.src = 'circle.png';
+    confetti.classList.add('confetti');
+
+    const startX = Math.random() * window.innerWidth;
+    const duration = 2 + Math.random() * 3;
+    const delay = Math.random() * 2;
+
+    confetti.style.left = `${startX}px`;
+    confetti.style.animation = `fall ${duration}s linear ${delay}s forwards`;
+    confetti.style.width = `${20 + Math.random() * 20}px`;
+    confetti.style.height = confetti.style.width;
+
+    document.body.appendChild(confetti);
+
+    confetti.addEventListener('animationend', () => {
+      confetti.remove();
+    });
+  }
+}
+
+window.onload = () => {
+  initAlphabet();
+  updateHangmanImage();
+  selectBuzzword('VPS');
+
+  const toggleBtn = document.getElementById('toggle-animation-btn');
+  toggleBtn.addEventListener('click', () => {
+    circleAnimationEnabled = !circleAnimationEnabled;
+    if (circleAnimationEnabled) {
+      toggleBtn.textContent = 'FORGATÁS: BE';
+      toggleBtn.classList.remove('off');
+    } else {
+      toggleBtn.textContent = 'FORGATÁS: KI';
+      toggleBtn.classList.add('off');
+    }
+  });
+
+  // ÚJ: RÁKÉRDEZÉS GOMB
+  const askBtn = document.createElement('button');
+  askBtn.textContent = 'RÁKÉRDEZÉS';
+  askBtn.classList.add('toggle-btn');
+  askBtn.style.background = '#ff9800';
+  askBtn.style.color = 'white';
+  askBtn.style.marginLeft = '10px';
+  document.getElementById('game-status').appendChild(askBtn);
+
+  askBtn.addEventListener('click', () => {
+    isWholeWordCheck = true;
+    document.getElementById('review-buttons').style.display = 'flex';
+  });
+
+  document.getElementById('btn-correct').addEventListener('click', () => {
+    document.getElementById('review-buttons').style.display = 'none';
+
+    if (isWholeWordCheck) {
+      // Teljes megfejtés elfogadva
+      for (const char of currentSolution) {
+        if (char !== ' ' && char !== '-' && char !== ',') {
+          guessedLetters.add(char);
+        }
+      }
+      updateWordDisplay();
+      document.getElementById('status-text').textContent = 'Nyertél! 🎉';
+      solutionDisplayEl.style.display = 'block';
+      disableAllLetterButtons();
+      gameWon = true;
+      updateHangmanImage();
+      launchConfetti();
+    } else {
+      // Normál betű validálás
+      processGuess(pendingLetter, pendingButton);
+      pendingLetter = null;
+      pendingButton = null;
+    }
+
+    isWholeWordCheck = false;
+  });
+
+  document.getElementById('btn-retry').addEventListener('click', () => {
+    document.getElementById('review-buttons').style.display = 'none';
+
+    if (isWholeWordCheck) {
+      // Teljes megfejtés hibás → játék vége (teljes "vesztettél" állapot)
+      wrongGuesses = maxWrongGuesses; // Kifutott a lehetőségből
+      document.getElementById('status-text').textContent = 'Vesztettél! 😔';
+      solutionDisplayEl.style.display = 'block';
+      disableAllLetterButtons();
+      updateHangmanImage();
+    } else {
+      // Normál betűre hibás választ adott a játékmester
+      wrongGuesses++;
+      updateWrongCount();
+      updateHangmanImage();
+
+      pendingButton.classList.add('retry');
+      pendingLetter = null;
+      pendingButton = null;
+      checkGameStatus();
+    }
+
+    isWholeWordCheck = false;
+  });
+};
+
+
+
+
+</script>
+
+
+</body>
+
+</html>

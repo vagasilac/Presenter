@@ -1,0 +1,7 @@
+/* Additional styles (poll modal and items) */
+.poll-item{background:#172235;border:1px dashed #2a3c56;border-radius:12px;padding:6px 10px;user-select:none}
+.modal{position:fixed;inset:0;background:rgba(10,16,24,.6);backdrop-filter:blur(4px);display:grid;place-items:center;z-index:1600}
+.modal .modal-content{min-width:300px;max-width:600px;width:90vw}
+
+/* Hide footer text as requested */
+footer{display:none!important}

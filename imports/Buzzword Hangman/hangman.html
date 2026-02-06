@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <style>
+    body {
+      font-family: 'Segoe UI', 'Arial', sans-serif;
+      background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+      margin: 0;
+      padding: 20px;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      color: white;
+      overflow: hidden; /* Prevent scrollbars from confetti */
+    }
+
+    .game-container {
+      max-width: 1200px;
+      width: 100%;
+      display: flex;
+      gap: 40px;
+      position: relative; /* For static circle positioning relative to game-container */
+      z-index: 1; /* Ensure game content is above confetti */
+    }
+
+    .main-panel {
+      flex: 3;
+      text-align: center;
+      position: relative; /* Needed for absolute positioning of static-circle */
+    }
+
+    .right-panel {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    h1 {
+      font-size: 2.8em;
+      margin-bottom: 10px;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+      text-align: center;
+    }
+
+    .buzzword-btn {
+      padding: 10px 20px;
+      background: #fff;
+      color: #2a5298;
+      border: none;
+      border-radius: 8px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      margin-bottom: 10px;
+      width: 100%;
+      display: flex; /* Use flexbox for button content */
+      justify-content: center; /* Center text and flag */
+      align-items: center;
+      gap: 8px; /* Space between text and flag */
+    }
+
+    .buzzword-btn:hover {
+      background: #eee;
+      transform: scale(1.05);
+    }
+
+    .quiz-hint {
+      font-size: 1.6em;
+      font-weight: bold;
+      margin: 10px 0;
+      background: rgba(255,255,255,0.1);
+      padding: 15px;
+      border-radius: 10px;
+      border: 2px solid rgba(255,255,255,0.3);
+      display: flex; /* To align buzzword and flag */
+      align-items: center;
+      justify-content: center;
+    }
+
+    .quiz-hint img.flag-icon {
+      width: 30px; /* Adjust flag size as needed */
+      height: auto;
+      margin-left: 10px;
+      border: 1px solid rgba(255,255,255,0.3);
+      border-radius: 3px;
+    }
+
+    .solution-display {
+      font-size: 1.3em;
+      margin-bottom: 20px;
+      color: #ffeb3b;
+      display: none;
+    }
+
+    .game-layout {
+      display: flex;
+      flex-direction: row;
+      gap: 20px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+    }
+
+    .car-container {
+      flex: 1;
+      min-width: 300px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 15px;
+      padding: 20px;
+    }
+
+    .car-container img {
+      width: 100%;
+      display: none;
+      border-radius: 10px;
+    }
+
+    .letter-section {
+      flex: 1;
+      min-width: 300px;
+    }
+
+    .word-display {
+      font-size: 2em;
+      font-family: 'Courier New', monospace;
+      margin: 10px 0;
+      letter-spacing: 0.3em;
+      background: rgba(255,255,255,0.1);
+      padding: 15px;
+      border-radius: 10px;
+      min-height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .alphabet {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(40px, 1fr));
+      gap: 5px;
+      margin: 10px 0;
+    }
+
+    .letter-btn {
+      padding: 10px;
+      font-size: 1em;
+      font-weight: bold;
+      border: none;
+      border-radius: 5px;
+      background: rgba(255,255,255,0.2);
+      color: white;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .letter-btn:hover {
+      background: rgba(255,255,255,0.3);
+      transform: translateY(-2px);
+    }
+
+    .letter-btn:disabled {
+      background: rgba(255,0,0,0.5);
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .letter-btn.correct {
+      background: rgba(0,255,0,0.5);
+    }
+
+    .game-status {
+      font-size: 1.5em;
+      margin: 20px 0;
+      font-weight: bold;
+    }
+
+    .wrong-count {
+      font-size: 1.2em;
+      margin: 10px 0;
+      color: #ffbaba;
+    }
+
+    /* Styles for the static circle image */
+    #static-circle {
+      position: absolute;
+      top: 0px; /* Adjust top position as needed */
+      left: 0px; /* Adjust left position as needed */
+      width: 200px; /* Set desired width */
+      height: 200px; /* Set desired height */
+      z-index: 10; /* Ensure it's above other elements */
+    }
+
+    /* Keyframe for rotation */
+    @keyframes rotateOnce {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    /* Apply rotation animation */
+    .rotating-circle {
+      animation: rotateOnce 0.5s ease-out forwards;
+    }
+
+    /* Confetti styles */
+    .confetti {
+      position: absolute;
+      top: -20px; /* Start above the viewport */
+      width: 20px; /* Base size */
+      height: 20px; /* Base size */
+      border-radius: 50%;
+      opacity: 0;
+      pointer-events: none; /* Allow clicks to pass through */
+      z-index: 9999; /* Ensure confetti is on top */
+    }
+
+    @keyframes fall {
+      0% {
+        transform: translateY(0) rotate(0deg);
+        opacity: 0;
+      }
+      10% {
+        opacity: 1;
+      }
+      100% {
+        transform: translateY(100vh) rotate(720deg); /* Fall to bottom of viewport */
+        opacity: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="game-container">
+    <div class="main-panel">
+      <img src="circle.png" id="static-circle" alt="Decorative circle"> <!-- Static circle image -->
+      <div class="quiz-hint" id="quiz-hint">VPS</div>
+      <div class="solution-display" id="solution-display">VALUE-ADDED PRODUCTION SYSTEM</div>
+
+      <div class="game-layout">
+        <div class="car-container">
+          <img src="hangman0.png" id="hangman-img-0">
+          <img src="hangman1.png" id="hangman-img-1">
+          <img src="hangman2.png" id="hangman-img-2">
+          <img src="hangman3.png" id="hangman-img-3">
+          <img src="hangman4.png" id="hangman-img-4">
+          <img src="hangman5.png" id="hangman-img-5">
+          <img src="hangman6.png" id="hangman-img-6">
+          <img src="hangman7.png" id="hangman-img-7">
+          <img src="hangman8.png" id="hangman-img-8"> <!-- New image for win state -->
+        </div>
+
+        <div class="letter-section">
+          <div class="word-display" id="word-display"></div>
+          <div class="wrong-count" id="wrong-count">Wrong guesses: 0/6</div>
+          <div class="alphabet" id="alphabet"></div>
+        </div>
+      </div>
+
+      <div class="game-status" id="game-status">Guess the letters!</div>
+    </div>
+
+    <div class="right-panel">
+      <strong style="margin-bottom: 10px;">Buzzwords</strong>
+      <!-- Buttons are now simple text, flag will be added dynamically -->
+      <button class="buzzword-btn" onclick="selectBuzzword('BMW')">BMW</button>
+      <button class="buzzword-btn" onclick="selectBuzzword('LEAN')">LEAN</button>
+      <button class="buzzword-btn" onclick="selectBuzzword('WPS')">WPS</button>
+      <button class="buzzword-btn" onclick="selectBuzzword('PDCA')">PDCA</button>
+      <button class="buzzword-btn" onclick="selectBuzzword('PDSA')">PDSA</button>
+      <button class="buzzword-btn" onclick="selectBuzzword('FFF')">FFF</button>
+      <button class="buzzword-btn" onclick="selectBuzzword('TPS')">TPS</button>
+      <button class="buzzword-btn" onclick="selectBuzzword('CIP')">CIP</button>
+      <button class="buzzword-btn" onclick="selectBuzzword('KVP')">KVP</button>
+      <button class="buzzword-btn" onclick="selectBuzzword('ÉTR')">ÉTR</button>
+      <button class="buzzword-btn" onclick="selectBuzzword('RFT')">RFT</button>
+      <button class="buzzword-btn" onclick="selectBuzzword('5+5 Debrecen 5/2')">5+5 Debrecen 5/2</button>
+      <button class="buzzword-btn" onclick="selectBuzzword('5S - angol')">5S - angol</button>
+      <button class="buzzword-btn" onclick="selectBuzzword('5S - magyar')">5S - magyar</button>
+      <button class="buzzword-btn" onclick="selectBuzzword('STANDARD')">STANDARD</button>
+    </div>
+  </div>
+
+  <script>
+    // Mapping of language codes to flag image URLs
+    const flags = {
+      'en': 'https://placehold.co/30x20/000000/FFFFFF?text=UK', // Placeholder for UK flag
+      'de': 'https://placehold.co/30x20/000000/FFFFFF?text=DE', // Placeholder for German flag
+      'hu': 'https://placehold.co/30x20/000000/FFFFFF?text=HU'  // Placeholder for Hungarian flag
+    };
+
+    const buzzwords = {
+      'BMW': { solution: 'BAYERISCHE MOTOREN WERKE', language: 'de' },
+      'LEAN': { solution: 'NEM MOZAIKSZÓ', language: 'en' },
+      'WPS': { solution: 'WERTSCHÖPFUNGSPROZESS', language: 'de' },
+      'PDCA': { solution: 'PLAN-DO-CHECK-ACT', language: 'en' },
+      'PDSA': { solution: 'PLAN-DO-STUDY-ACT', language: 'en' },
+      'VPS': { solution: 'VALUE-ADDED PRODUCTION SYSTEM', language: 'en' },
+      'FFF': { solution: 'FOLYAMATOS FEJLESZTÉSI FOLYAMAT', language: 'hu' },
+      'TPS': { solution: 'TOYOTA PRODUCTION SYSTEM', language: 'en' },
+      'ÉTR': { solution: 'ÉRTÉKTEREMTŐ TERMELÉSI RENDSZER', language: 'hu' },
+      'CIP': { solution: 'CONTINUOUS IMPROVEMENT PROCESS', language: 'en' },
+      'KVP': { solution: 'KONTINUIERLICHER VERBESSERUNGSPROZESS', language: 'de' },
+      'STANDARD': { solution: 'AKTUÁLIS LEGJOBB GYAKORLAT', language: 'hu' },
+      'RFT': { solution: 'RIGHT FIRST TIME', language: 'en' },
+      '5+5 Debrecen 5/2': { solution: 'SZUBSZIDIARITÁS', language: 'hu' },
+      '5S - angol': { solution: 'SORT, SET IN ORDER, SHINE, STANDARDIZE, SUSTAIN', language: 'en' },
+      '5S - magyar': { solution: 'SZORTÍROZÁS, ELRENDEZÉS, TISZTÍTÁS, SZABVÁNYOSÍTÁS, FENNTARTÁS', language: 'hu' },
+    };
+
+    let currentBuzzwordAbbr = '';
+    let currentSolution = '';
+    let guessedLetters = new Set();
+    let wrongGuesses = 0;
+    const maxWrongGuesses = 6; // Max wrong guesses is now 6
+
+    const quizHintEl = document.getElementById('quiz-hint');
+    const solutionDisplayEl = document.getElementById('solution-display');
+    const wordDisplayEl = document.getElementById('word-display');
+    const wrongCountEl = document.getElementById('wrong-count');
+    const alphabetEl = document.getElementById('alphabet');
+    const gameStatusEl = document.getElementById('game-status');
+    const hangmanImages = [];
+    // Populate hangmanImages up to index 7 (hangman7.png) for loss state
+    for (let i = 0; i <= 7; i++) {
+      hangmanImages.push(document.getElementById(`hangman-img-${i}`));
+    }
+    const winImage = document.getElementById('hangman-img-8');
+    const staticCircle = document.getElementById('static-circle');
+
+    let isInitialLoad = true;
+    let gameWon = false;
+
+    function createLetterButton(letter) {
+      const button = document.createElement('button');
+      button.classList.add('letter-btn');
+      button.textContent = letter;
+      button.onclick = () => handleGuess(letter);
+      alphabetEl.appendChild(button);
+    }
+
+    function initAlphabet() {
+      alphabetEl.innerHTML = '';
+
+      for (let i = 65; i <= 90; i++) { // A-Z
+        createLetterButton(String.fromCharCode(i));
+      }
+
+      // German specific characters
+      ['Ä', 'Ö', 'Ü', 'ß'].forEach(createLetterButton);
+      // Hungarian specific characters
+      ['Á', 'É', 'Í', 'Ó', 'Ő', 'Ú', 'Ü', 'Ű'].forEach(createLetterButton);
+    }
+
+    function selectBuzzword(buzzwordAbbr) {
+      currentBuzzwordAbbr = buzzwordAbbr;
+      currentSolution = buzzwords[buzzwordAbbr].solution.toUpperCase();
+      const languageCode = buzzwords[buzzwordAbbr].language;
+      const flagImageUrl = flags[languageCode] || ''; // Get the flag image URL or empty string if not found
+
+      guessedLetters.clear();
+      gameWon = false;
+
+      wrongGuesses = 0; // Always start wrong guesses at 0
+      
+      // Clear previous content and add buzzword text
+      quizHintEl.innerHTML = currentBuzzwordAbbr;
+      // Add flag image if URL exists
+      if (flagImageUrl) {
+        const flagImg = document.createElement('img');
+        flagImg.src = flagImageUrl;
+        flagImg.alt = `${languageCode} flag`;
+        flagImg.classList.add('flag-icon');
+        quizHintEl.appendChild(flagImg);
+      }
+
+      solutionDisplayEl.textContent = currentSolution;
+      solutionDisplayEl.style.display = 'none';
+
+      updateWordDisplay();
+      updateHangmanImage(); // Call to update image based on new game state
+      updateWrongCount();
+      gameStatusEl.textContent = 'Guess the letters!';
+
+      document.querySelectorAll('.letter-btn').forEach(button => {
+        button.disabled = false;
+        button.classList.remove('correct');
+      });
+
+      // Ensure the static circle is not rotating when a new game starts
+      if (staticCircle) {
+        staticCircle.style.animation = 'none'; // Clear any ongoing animation
+      }
+      // Clear any existing confetti
+      document.querySelectorAll('.confetti').forEach(c => c.remove());
+
+      // After a buzzword is selected, it's no longer the initial load
+      isInitialLoad = false;
+    }
+
+    function updateWordDisplay() {
+      let display = '';
+      for (const char of currentSolution) {
+        if (char === ' ' || char === '-') {
+          display += char;
+        } else if (guessedLetters.has(char)) {
+          display += char;
+        } else {
+          display += '_';
+        }
+      }
+      wordDisplayEl.textContent = display;
+    }
+
+    function updateHangmanImage() {
+      hangmanImages.forEach(img => img.style.display = 'none'); // Hide all default hangman images
+      winImage.style.display = 'none'; // Hide win image
+
+      if (gameWon) {
+        winImage.style.display = 'block'; // Show win image
+      } else if (isInitialLoad) {
+        // Show hangman0.png only on the very first load of the app
+        hangmanImages[0].style.display = 'block';
+      } else if (wrongGuesses === 0 && !isInitialLoad) {
+        // After a buzzword is selected, but before any wrong guesses
+        hangmanImages[1].style.display = 'block';
+      } else if (wrongGuesses > 0 && wrongGuesses <= maxWrongGuesses) {
+        // For wrong guesses 1 to 6, map to hangman2.png to hangman7.png
+        hangmanImages[wrongGuesses + 1].style.display = 'block';
+      } else if (wrongGuesses > maxWrongGuesses) {
+        // If wrongGuesses exceeds max (i.e., 7th wrong guess), show hangman7.png
+        hangmanImages[7].style.display = 'block';
+      }
+    }
+
+    function updateWrongCount() {
+      wrongCountEl.textContent = `Wrong guesses: ${wrongGuesses}/${maxWrongGuesses}`;
+    }
+
+    function handleGuess(letter) {
+      const button = event.target;
+      button.disabled = true; // Disable immediately
+
+      // Trigger rotation on the static circle
+      if (staticCircle) {
+        staticCircle.style.animation = 'none'; // Clear previous animation
+        void staticCircle.offsetWidth; // Trigger reflow to apply 'none'
+        staticCircle.style.animation = 'rotateOnce 0.5s ease-out forwards'; // Re-apply animation
+      }
+
+      // Apply game logic after a short delay (e.g., matching the animation duration)
+      setTimeout(() => {
+        if (currentSolution.includes(letter)) {
+          guessedLetters.add(letter);
+          button.classList.add('correct'); // Mark as correct
+          updateWordDisplay();
+          checkGameStatus();
+        } else {
+          wrongGuesses++;
+          updateWrongCount();
+          updateHangmanImage();
+          checkGameStatus();
+        }
+      }, 500); // This timeout should match the animation duration (0.5s)
+    }
+
+    function checkGameStatus() {
+      const currentDisplay = wordDisplayEl.textContent.replace(/ /g, '').replace(/-/g, '');
+      const solutionNoSpaces = currentSolution.replace(/ /g, '').replace(/-/g, '');
+
+      if (currentDisplay === solutionNoSpaces) {
+        gameStatusEl.textContent = 'You Win! 🎉';
+        solutionDisplayEl.style.display = 'block';
+        disableAllLetterButtons();
+        gameWon = true;
+        updateHangmanImage();
+        launchConfetti(); // Reinstated confetti on win
+      } else if (wrongGuesses >= maxWrongGuesses) { // Game over if wrong guesses reach max
+        gameStatusEl.textContent = 'Game Over! You Lost. 😔';
+        solutionDisplayEl.style.display = 'block';
+        disableAllLetterButtons();
+        updateHangmanImage(); // Ensure final hangman image is shown
+      }
+    }
+
+    function disableAllLetterButtons() {
+      document.querySelectorAll('.letter-btn').forEach(button => {
+        button.disabled = true;
+      });
+    }
+
+    /**
+     * Launches a confetti animation.
+     */
+    function launchConfetti() {
+      const confettiColors = ['#f00', '#0f0', '#00f', '#ff0', '#0ff', '#f0f']; // Example colors
+      const numConfetti = 50; // Number of confetti pieces
+
+      for (let i = 0; i < numConfetti; i++) {
+        const confetti = document.createElement('img'); // Use img tag for circle.png
+        confetti.src = 'circle.png'; // Use the actual circle.png
+        confetti.classList.add('confetti');
+
+        // Randomize position, size, duration, and delay
+        const startX = Math.random() * window.innerWidth;
+        const duration = 2 + Math.random() * 3; // 2-5 seconds
+        const delay = Math.random() * 2; // 0-2 seconds delay
+
+        confetti.style.left = `${startX}px`;
+        confetti.style.animation = `fall ${duration}s linear ${delay}s forwards`;
+        // Increased size for confetti circles
+        confetti.style.width = `${20 + Math.random() * 20}px`; // 20-40px
+        confetti.style.height = confetti.style.width; // Keep it a circle
+
+        document.body.appendChild(confetti);
+
+        // Remove confetti after animation to clean up DOM
+        confetti.addEventListener('animationend', () => {
+          confetti.remove();
+        });
+      }
+    }
+
+    window.onload = () => {
+      initAlphabet();
+      // On initial load, display hangman0.png
+      updateHangmanImage(); // This will show hangman0.png because isInitialLoad is true and wrongGuesses is 0
+      selectBuzzword('VPS'); // Then select the default buzzword, which will trigger hangman1.png
+    };
+  </script>
+</body>
+</html>

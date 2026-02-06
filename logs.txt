@@ -1,0 +1,22 @@
+Laci@DESKTOP-U0T2H5S MINGW64 ~/Documents/CODE/APPS/Presenter (main)
+$ npm run start
+
+> presenter@1.0.0 start
+> node server.js 8080  
+
+Serving static + WS on:
+   http://192.168.56.1:8080
+   http://192.168.1.9:8080
+Open the FIRST URL on your laptop, then scan the QR on the Session tab.
+Server broadcasting announce to client sdq6majx
+Server broadcasting announce to client ww13k8xf
+Server broadcasting scores to client sdq6majx  
+Server broadcasting scores to client ww13k8xf  
+Server broadcasting roster to client sdq6majx
+Server broadcasting roster to client ww13k8xf
+Server broadcasting poll to client sdq6majx
+Server broadcasting poll to client ww13k8xf
+Server broadcasting answer to client sdq6majx
+Server broadcasting answer to client ww13k8xf
+Server broadcasting scores to client sdq6majx
+Server broadcasting scores to client ww13k8xf

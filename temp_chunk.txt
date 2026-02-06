@@ -1,0 +1,56 @@
+
+const wss = new WebSocket.Server({ noServer: true });
+wss.on('connection',(ws)=>{
+  ws.id = Math.random().toString(36).slice(2,10);
+  ws.isAlive = true;
+  ws.on('pong',()=>ws.isAlive=true);
+  ws.on('message',(raw)=>{
+    let msg={}; try{ msg=JSON.parse(raw) }catch{ return; }
+    const room=(msg.room||'default')+'';
+    if(!ws.room){ ws.room=room; roomPeers(room).add(ws);
+      ws.send(JSON.stringify({t:'roster',room,avatars:rosterList(room)}));
+      ws.send(JSON.stringify({t:'scores',room,scores:roomScores(room)}));
+    }
+    switch(msg.t){
+      case 'hello': break;
+      case 'announce': {
+        const avMap=roomAvatars(room);
+        const wanted=(msg.avatar||'🙂')+''; const clientId=(msg.id||ws.id)+'';
+        if(avMap.has(wanted) && avMap.get(wanted)!==clientId){ ws.send(JSON.stringify({t:'avatar_conflict',room})); break; }
+        avMap.set(wanted, clientId); ws.clientId=clientId; ws.avatar=wanted;
+        const s=roomScores(room); if(!s[clientId]) s[clientId]={name:msg.name||'Guest',points:0,avatar:wanted}; else s[clientId].avatar=wanted;
+        broadcast(room,{t:'announce',room,id:clientId,name:s[clientId].name,avatar:wanted});
+        broadcast(room,{t:'scores',room,scores:s});
+        broadcast(room,{t:'roster',room,avatars:rosterList(room)});
+        break;
+      }
+      case 'poll': case 'answer': case 'tick':
+      case 'react': case 'react_update':
+      case 'qa_new': case 'qa_vote': case 'qa_update':
+        broadcast(room,msg); break;
+      case 'scores':
+        scores.set(room, msg.scores||roomScores(room));
+        broadcast(room,{t:'scores',room,scores:roomScores(room)}); break;
+      case 'reset':
+        scores.set(room, {}); broadcast(room,{t:'reset',room}); broadcast(room,{t:'scores',room,scores:{}}); break;
+    }
+  });
+  ws.on('close',()=>{
+    const room=ws.room; if(!room) return;
+    roomPeers(room).delete(ws);
+    if(ws.avatar){ const avMap=roomAvatars(room); if(avMap.get(ws.avatar)===ws.clientId) avMap.delete(ws.avatar); broadcast(room,{t:'roster',room,avatars:rosterList(room)}); }
+  });
+});
+server.on('upgrade',(req,socket,head)=>{ wss.handleUpgrade(req,socket,head,(ws)=>wss.emit('connection',ws,req)); });
+setInterval(()=>{ wss.clients.forEach(ws=>{ if(!ws.isAlive) return ws.terminate(); ws.isAlive=false; try{ws.ping()}catch{} }); }, 30000);
+
+server.listen(PORT, ()=>{
+  const ifaces = getIPs().map(ip => `http://${ip}:${PORT}`);
+  console.log('Serving static + WS on:'); ifaces.forEach(u=>console.log('  ', u));
+  console.log('Open the FIRST URL on your laptop, then scan the QR on the Session tab.');
+});
+function getIPs(){
+  const os=require('os'); const ips=[]; const nics=os.networkInterfaces();
+  Object.values(nics).forEach(list=>{ (list||[]).forEach(i=>{ if(i.family==='IPv4' && !i.internal) ips.push(i.address); }); });
+  if(!ips.length) ips.push('127.0.0.1'); return ips;
+}

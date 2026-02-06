@@ -41,6 +41,8 @@
     container.innerHTML = polls.map((p,i)=>
       `<div class="row gap8 mt6"><div class="chip flex1">${p.q}</div>`+
       `<button data-i="${i}" class="start pill primary mini">Start</button>`+
+      `<button data-i="${i}" class="insert pill mini">Insert</button>`+
+      `<button data-i="${i}" class="edit pill mini">Edit</button>`+
       `<button data-i="${i}" class="delete pill danger mini">Delete</button></div>`
     ).join('');
     container.querySelectorAll('button.start').forEach(btn=>{
@@ -48,6 +50,20 @@
         ev.preventDefault();
         const poll = polls[Number(btn.dataset.i)];
         if(startCb) startCb(poll);
+      });
+    });
+    container.querySelectorAll('button.insert').forEach(btn=>{
+      btn.addEventListener('click', (ev)=>{
+        ev.preventDefault();
+        const poll = polls[Number(btn.dataset.i)];
+        try{ if(typeof global.InsertPollToSlide==='function'){ global.InsertPollToSlide(poll); } }catch(_){ /* noop */ }
+      });
+    });
+    container.querySelectorAll('button.edit').forEach(btn=>{
+      btn.addEventListener('click', (ev)=>{
+        ev.preventDefault();
+        const poll = polls[Number(btn.dataset.i)];
+        try{ if(typeof global.BeginPollEdit==='function'){ global.BeginPollEdit(poll); } }catch(_){ /* noop */ }
       });
     });
     container.querySelectorAll('button.delete').forEach(btn=>{

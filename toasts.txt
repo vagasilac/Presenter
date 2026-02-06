@@ -1,0 +1,5 @@
+toast shown on trainee screen when poll is started:
+Message received: {"t":"poll","room":"vob9wj","poll":{"id":"tlr7a0","type":"mc","q":"Valami","choices":["Aa","Bb","Cc"],"timed":0,"correct":"A","multi":false,"allowChange":true,"maxWords":3,"maxChars":120,"score":true,"img":null}}
+
+toast shown on trainee screen when poll is closed:
+Message received: {"t":"scores","room":"vob9wj","scores":{"6vhda4":{"name":"Brave-Wolf-58","points":0,"avatar":"🦖"}}}
